@@ -59,5 +59,13 @@ window.RB_MACROS = {
   "{BOMB}":    "(Token này có [Deploy]. Khi nó bị tiêu diệt, gây 2 sát thương lên một kẻ địch tại đó và tiêu diệt các Bomb khác của bạn tại đó.)",
   "{GOLD}":    "(Token này có: \"[Reaction][>] Tiêu diệt lá này, [T]: [Add] [A].\")",
   "{DKR}":     "(Khi lá này bị tiêu diệt, nhận hiệu ứng.)",
-  "{BANISHTOP}": "trục xuất lá trên cùng của bộ bài chính. Cho đến giai đoạn Kết thúc tiếp theo của bạn, bạn có thể chơi lá đó. (Bạn vẫn phải trả chi phí của nó.)"
+  "{BANISHTOP}": "trục xuất lá trên cùng của bộ bài chính. Cho đến giai đoạn Kết thúc tiếp theo của bạn, bạn có thể chơi lá đó. (Bạn vẫn phải trả chi phí của nó.)",
+  /* --- thêm cho Vendetta --- */
+  "{EMPR}":    "(Trả chi phí để Empower lá này. Chỉ dùng khi lá này chưa Empowered.)",
+  "{SELFEMP}": "(Lá này trở thành Empowered nếu chưa.)",
+  "{FLOWR}":   "(Bạn có thể chơi lá này từ mộ bài với chi phí Flow. Sau đó trục xuất nó.)",
+  "{AMBUSH}":  "[Ambush] (Bạn có thể chơi lá này như một [Reaction] lên một chiến trường nơi bạn có đơn vị.)",
+  "{DEFLECT2}":"[Deflect 2] (Đối thủ phải trả [A][A] để chọn lá này bằng phép hoặc kỹ năng.)",
+  "{CLONE}":   "(Token này có: \"Khi lá này tấn công, bạn có thể trục xuất một đơn vị từ mộ bài của bạn. Nếu làm vậy, cho lá này [Assault 4] trong lượt này.\")",
+  "{EQUIPR}":  "Gắn lá này vào một đơn vị bạn kiểm soát."
 };

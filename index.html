@@ -15,6 +15,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap">
 <title>Riftbound VN</title>
+<script>
+/* chủ đề: auto | light | dark — áp trước khi vẽ trang */
+(function(){
+  var m; try { m = localStorage.getItem("rb_theme") || "auto"; } catch (e) { m = "auto"; }
+  var q = window.matchMedia("(prefers-color-scheme: dark)");
+  function apply(){ document.documentElement.dataset.theme = (m === "auto" ? (q.matches ? "dark" : "light") : m); }
+  window.RB_THEME = { get: function(){ return m; }, set: function(v){ m = v; try { localStorage.setItem("rb_theme", v); } catch (e) {} apply(); } };
+  if (q.addEventListener) q.addEventListener("change", function(){ if (m === "auto") apply(); });
+  apply();
+})();
+</script>
 <!-- =========================================================
      1. STYLE — cùng bảng màu bản máy tính, bố cục cho màn hình dọc
      ========================================================= -->
@@ -26,6 +37,16 @@
   --mono:"IBM Plex Mono","Cascadia Mono",Menlo,Consolas,monospace;
   --safeB:env(safe-area-inset-bottom,0px); --safeT:env(safe-area-inset-top,0px);
 }
+/* chế độ tối: đảo nền/chữ, giữ Mustard + Tangerine; nền màu cố định luôn dùng chữ đen */
+html[data-theme=dark]{--ink:#EAE4DA;--paper:#1C1B19;--paper2:#2A2926;--mute:#A39D92;--cap:#3A3834;color-scheme:dark}
+:root{--cap:#DDD6CA;--black:#1D1D1B}
+.top,.nav,.chip.on,button.orange,.kw,.d-M,.d-B,.d-O,.d-N,.sym.en{color:var(--black)}
+.top{--ink:var(--black)}
+html[data-theme=dark] .top input,html[data-theme=dark] .top button{color:#EAE4DA;border-color:var(--black)}
+html[data-theme=dark] .top input{background:#2A2926}
+html[data-theme=dark] .top button{background:#2A2926}
+html[data-theme=dark] .top button.orange{background:var(--tang);color:var(--black)}
+html[data-theme=dark] .nav button.on{background:var(--black);color:#EAE4DA}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--paper)}
 body{font-family:var(--mono);color:var(--ink);font-size:14px;overscroll-behavior:none}
@@ -71,7 +92,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .imgs figure.land{flex-basis:100%}
 .imgs img{width:100%;display:block;aspect-ratio:744/1039;object-fit:cover;background:var(--paper2)}
 .imgs figure.land img{aspect-ratio:1040/744}
-.imgs figcaption{font-size:10.5px;background:#DDD6CA;padding:3px 8px;text-align:center;max-width:100%}
+.imgs figcaption{font-size:10.5px;background:var(--cap);padding:3px 8px;text-align:center;max-width:100%}
 .hint{font-size:11px;color:var(--mute);padding:6px 12px 0}
 .body{padding:12px 14px}
 .body h2{font-size:17px;margin:0 0 8px;font-weight:600}
@@ -79,10 +100,11 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .sec{border-top:var(--line);padding-top:10px;margin-top:12px}
 .sec h3{font-size:12px;margin:0 0 8px;font-weight:600;letter-spacing:.04em}
 .txt{line-height:1.8;font-size:14.5px}
-.kw{background:var(--pink);border:1px solid var(--ink);padding:0 4px}
+.kw{background:var(--pink);border:1px solid var(--black);padding:0 4px}
 .sym{display:inline-block;border:1px solid var(--ink);padding:0 4px;font-size:11px;line-height:17px;vertical-align:1px;background:var(--paper2)}
 .sym.en{border-radius:50%;min-width:19px;text-align:center;padding:0;background:#fff}
 .sym.ex{background:var(--ink);color:var(--paper)}
+.sym.d-F{background:var(--red)}.sym.d-C{background:var(--tea)}.sym.d-M{background:var(--sky)}.sym.d-B{background:var(--tang)}.sym.d-X{background:var(--lav)}.sym.d-O{background:var(--mustard)}
 .kwrow{margin:0 0 10px;line-height:1.7}
 .empty{color:var(--mute);font-style:italic}
 .zoom{position:fixed;inset:0;z-index:20;background:rgba(29,29,27,.94);display:flex;align-items:center;justify-content:center;padding:10px}
@@ -158,13 +180,14 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 <script src="data/cards.js"></script>
 <script src="data/glossary.js"></script>
 <script src="data/vi_05_radiance.js"></script>
+<script src="data/vi_04_vendetta.js"></script>
 <!-- thêm set dịch: <script src="data/vi_0X_....js"></script> + thêm vào SHELL trong sw.js -->
 
 <script>
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v1 · Radiance";
+const APP_VER = "v2 · Radiance, Vendetta";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
@@ -428,7 +451,11 @@ async function drawSettings(keepProg){
     return b.length && b.filter(c => VI[c.name] !== undefined).length / b.length >= .9;
   }).map(s => s[1]);
   const prog = keepProg && $("pBox") ? $("pBox").outerHTML : `<div class="box" id="pBox" hidden><div class="prog"><div id="pBar"></div></div><div id="pLab" class="note"></div></div>`;
+  const th = RB_THEME.get();
   $("setPane").innerHTML = `
+    <div class="box"><h3>Giao diện</h3>
+      <div class="row" style="display:flex;gap:6px;flex-wrap:wrap">${[["auto","Theo máy"],["light","Sáng"],["dark","Tối"]].map(([v, t]) => `<span class="chip ${th === v ? "on" : ""}" data-theme-set="${v}">${t}</span>`).join("")}</div>
+    </div>
     <div class="box"><h3>Ảnh đã lưu trong máy</h3>
       <div>${n} ảnh · app đang dùng khoảng ${mb} MB</div>
       <label>Giới hạn <select id="sLimit">${LIMITS.map(([v, t]) => `<option value="${v}" ${+v === getLimit() ? "selected" : ""}>${t}</option>`).join("")}</select></label>
@@ -454,6 +481,7 @@ async function drawSettings(keepProg){
   $("sLimit").onchange = async e => { store.set("rb_limit", e.target.value); await trimCache(); drawSettings(); };
   $("sClear").onclick = async () => { if (!confirm("Xóa toàn bộ ảnh đã lưu? Chữ dịch vẫn giữ.")) return; if (HAS_CACHE) await caches.delete(IMG_CACHE); drawSettings(); };
   document.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => prefetchSet(b.dataset.pre));
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => { RB_THEME.set(b.dataset.themeSet); drawSettings(); });
   if (deferredInstall) { $("sInstall").hidden = false; $("sInstall").onclick = async () => { deferredInstall.prompt(); deferredInstall = null; $("sInstall").hidden = true; }; }
 }
 let deferredInstall = null;
