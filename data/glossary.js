@@ -86,5 +86,13 @@ window.RB_MACROS = {
   "{BIRD}":    "token đơn vị Bird 1 [S] có [Deflect]",
   "{BIRDR}":   "(Đối thủ phải trả [A] để chọn đơn vị có [Deflect] bằng phép hoặc kỹ năng.)",
   "{SPRITE}":  "token đơn vị Sprite 3 [S] có [Temporary]",
-  "{ADDR}":    "(Kỹ năng tạo tài nguyên không thể bị phản ứng.)"
+  "{ADDR}":    "(Kỹ năng tạo tài nguyên không thể bị phản ứng.)",
+  /* --- thêm cho Spiritforged --- */
+  "{EQC}":     "[Equip] [C] ([C]: Gắn lá này vào một đơn vị bạn kiểm soát.)",
+  "{EQ1C}":    "[Equip] [1][C] ([1][C]: Gắn lá này vào một đơn vị bạn kiểm soát.)",
+  "{QUICK}":   "[Quick-Draw] (Lá này có [Reaction]. Khi bạn chơi nó, gắn nó vào một đơn vị bạn kiểm soát.)",
+  "{WEAPON}":  "[Weaponmaster] (Khi bạn chơi lá này, bạn có thể [Equip] một Equipment của bạn vào lá này với giá giảm [A], kể cả khi Equipment đó đang gắn vào đơn vị khác.)",
+  "{UNIQUE}":  "[Unique] (Deck của bạn chỉ được có 1 lá mang tên này.)",
+  "{SEAL}":    "[T]: [Reaction] — [Add] [C]. (Kỹ năng tạo tài nguyên không thể bị phản ứng.)",
+  "{GOLD1}":   "chơi một token trang bị Gold ở trạng thái kiệt sức"
 };

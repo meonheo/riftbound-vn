@@ -81,6 +81,10 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 8px 12px}
 .tile .im{width:100%;aspect-ratio:63/88;border:var(--line);background:var(--paper2);display:block;object-fit:cover}
 .tile.land .im{object-fit:contain}
+.tile{position:relative}
+.ban{position:absolute;top:4px;left:4px;background:var(--red);color:#fff;font-size:9.5px;font-weight:600;letter-spacing:.04em;padding:1px 5px;border:1px solid var(--black)}
+.tag.bant{background:var(--red);color:#fff;font-weight:600}
+.bn{color:var(--red);font-weight:600}
 .tile .nm{font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---- chi tiết thẻ (lớp phủ toàn màn hình) ---- */
@@ -136,6 +140,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
     <div class="fpanel" id="fpanel" hidden>
       <div class="row" id="fSets"></div>
       <div class="row" id="fDoms"></div>
+      <div class="row" id="fBan"></div>
       <div class="row"><select id="fType"></select><select id="fVar"><option value="base">Thẻ gốc</option><option value="var">Biến thể</option><option value="all">Tất cả</option></select></div>
     </div>
     <div class="sub"><span id="fsum"></span><span id="cnt"></span></div>
@@ -179,20 +184,26 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 <!-- dữ liệu -->
 <script src="data/cards.js"></script>
 <script src="data/glossary.js"></script>
+<script src="data/banned.js"></script>
 <script src="data/vi_05_radiance.js"></script>
 <script src="data/vi_04_vendetta.js"></script>
 <script src="data/vi_03_unleashed.js"></script>
+<script src="data/vi_02_spiritforged.js"></script>
 <!-- thêm set dịch: <script src="data/vi_0X_....js"></script> + thêm vào SHELL trong sw.js -->
 
 <script>
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v3 · Radiance, Vendetta, Unleashed";
+const APP_VER = "v4 · Radiance, Vendetta, Unleashed, Spiritforged";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
 const VI = window.RB_VI || {}, GLO = window.RB_GLOSSARY, MAC = window.RB_MACROS;
+const BAN = window.RB_BANNED || {};                            // thẻ bị Riot cấm, theo tên
+const banOf = c => BAN[c.name];
+const banLabel = b => b.f === "2v2" ? "BANNED 2v2" : "BANNED";
+const banText = b => `Bị cấm từ ${b.d.split("-").reverse().join("/")} · ${b.f === "2v2" ? "chỉ Constructed 2v2" : "Standard và 2v2 Constructed"}`;
 const SETS = [["RAD","Radiance"],["VEN","Vendetta"],["UNL","Unleashed"],["SFD","Spiritforged"],["OGN","Origins"]];
 const SET_RANK = {OGN:1,OGS:1,SFD:2,UNL:3,VEN:4,RAD:5};
 const DOM = {F:"Fury",C:"Calm",M:"Mind",B:"Body",X:"Chaos",O:"Order",N:"Colorless"};
@@ -265,11 +276,12 @@ document.querySelectorAll(".nav button").forEach(b => b.onclick = () => {
 /* =========================================================
    5. THƯ VIỆN — bộ lọc, lưới cuộn vô hạn
    ========================================================= */
-const ST = { set: store.get("rb_set", "RAD"), dom: "", type: "", variant: "base", q: "", shown: 0, list: [] };
+const ST = { set: store.get("rb_set", "RAD"), dom: "", type: "", variant: "base", ban: false, q: "", shown: 0, list: [] };
 const PAGE = 45;
 function drawFilters(){
   $("fSets").innerHTML = `<span class="chip ${!ST.set ? "on" : ""}" data-set="">Mọi set</span>` +
     SETS.map(([k, n]) => `<span class="chip ${ST.set === k ? "on" : ""}" data-set="${k}">${n}</span>`).join("");
+  $("fBan").innerHTML = `<span class="chip ${ST.ban ? "on" : ""}" data-ban="1">Chỉ thẻ bị cấm (${Object.keys(BAN).length})</span>`;
   $("fDoms").innerHTML = `<span class="chip ${!ST.dom ? "on" : ""}" data-dom="">Mọi domain</span>` +
     Object.entries(DOM).map(([k, n]) => `<span class="chip ${ST.dom === k ? "on" : ""}" data-dom="${k}">${n}</span>`).join("");
   $("fType").innerHTML = `<option value="">Mọi loại</option>` + TYPES.map(t => `<option ${ST.type === t ? "selected" : ""}>${t}</option>`).join("");
@@ -285,6 +297,7 @@ function filtered(){
     if (ST.variant === "var" && c.base) return false;
     if (ST.type && c.type !== ST.type) return false;
     if (ST.dom && !(c.dom || "").includes(ST.dom)) return false;
+    if (ST.ban && !banOf(c)) return false;
     if (q) {
       const hay = norm(c.name + " " + c.code + " " + (c.champ || "") + " " + (VI[c.name] ? expand(VI[c.name]) : ""));
       if (!hay.includes(q)) return false;
@@ -302,15 +315,16 @@ function moreGrid(){
   const chunk = ST.list.slice(ST.shown, ST.shown + PAGE); if (!chunk.length) return;
   $("grid").insertAdjacentHTML("beforeend", chunk.map((c, i) =>
     `<div class="tile ${c.landscape ? "land" : ""}" data-i="${ST.shown + i}">
-       <img class="im" loading="lazy" src="${img(c)}" alt=""><div class="nm">${esc(fullName(c))}</div></div>`).join(""));
+       ${banOf(c) ? `<span class="ban">${banLabel(banOf(c))}</span>` : ""}<img class="im" loading="lazy" src="${img(c)}" alt=""><div class="nm">${esc(fullName(c))}</div></div>`).join(""));
   ST.shown += chunk.length;
 }
 new IntersectionObserver(es => { if (es[0].isIntersecting) moreGrid(); }, { root: $("vLib"), rootMargin: "600px" }).observe($("sentinel"));
 $("grid").onclick = e => { const t = e.target.closest(".tile"); if (t) openDetail(ST.list.map(c => c.code), +t.dataset.i); };
 $("btnF").onclick = () => { $("fpanel").hidden = !$("fpanel").hidden; $("btnF").classList.toggle("orange", !$("fpanel").hidden); };
 $("fpanel").onclick = e => {
-  const t = e.target.closest("[data-set],[data-dom]"); if (!t) return;
-  if (t.dataset.set !== undefined) { ST.set = t.dataset.set; store.set("rb_set", ST.set); }
+  const t = e.target.closest("[data-set],[data-dom],[data-ban]"); if (!t) return;
+  if (t.dataset.ban) ST.ban = !ST.ban;
+  else if (t.dataset.set !== undefined) { ST.set = t.dataset.set; store.set("rb_set", ST.set); }
   else ST.dom = t.dataset.dom;
   drawFilters(); drawGrid();
 };
@@ -347,7 +361,8 @@ function drawDetail(){
     <div class="hint">${vars.length > 2 ? "Vuốt ngang để xem thêm biến thể · " : ""}Chạm ảnh để phóng to</div>
     <div class="body">
       <h2>${esc(fullName(c))}</h2>
-      <div class="meta"><span class="tag">${c.setName}</span><span class="tag">${c.type}</span>${doms}${stats.map(s => `<span class="tag">${s}</span>`).join("")}</div>
+      <div class="meta">${banOf(c) ? `<span class="tag bant">${banLabel(banOf(c))}</span>` : ""}<span class="tag">${c.setName}</span><span class="tag">${c.type}</span>${doms}${stats.map(s => `<span class="tag">${s}</span>`).join("")}</div>
+      ${banOf(c) ? `<div class="bn" style="font-size:12px;margin-top:8px">${banText(banOf(c))}</div>` : ""}
       <div class="sec"><h3>NỘI DUNG THẺ</h3>${body}</div>
       ${kws.length ? `<div class="sec"><h3>KEYWORD</h3>${kws.map(k => `<div class="kwrow"><span class="kw">${k}</span> — ${esc(GLO[k])}</div>`).join("")}</div>` : ""}
     </div>`;
@@ -395,10 +410,11 @@ function drawDeck(){
       if (!r.card) { miss++; return `<div class="drow err"><b>${r.qty}×</b><span></span><span>${esc(r.name)}<small>Không tìm thấy tên này</small></span></div>`; }
       codes.push(r.card.code);
       const tr = VI[r.card.name] !== undefined || r.card.type === "Rune";
-      return `<div class="drow" data-i="${codes.length - 1}"><b>${r.qty}×</b><img loading="lazy" src="${img(r.card)}" alt=""><span>${esc(fullName(r.card))}<small>${r.card.code.toUpperCase()}${tr ? "" : " · chưa dịch"}</small></span></div>`;
+      return `<div class="drow" data-i="${codes.length - 1}"><b>${r.qty}×</b><img loading="lazy" src="${img(r.card)}" alt=""><span>${esc(fullName(r.card))}<small>${r.card.code.toUpperCase()}${tr ? "" : " · chưa dịch"}${banOf(r.card) ? ` · <span class="bn">${banLabel(banOf(r.card))}</span>` : ""}</small></span></div>`;
     }).join("") + `</div>`;
   }).join("");
-  $("deckList").innerHTML = `<div class="note">${total} lá${miss ? ` · ${miss} dòng không tìm thấy` : ""}</div>` + html;
+  const banned = SECTIONS.flatMap(([k]) => sec[k]).filter(r => r.card && banOf(r.card));
+  $("deckList").innerHTML = `<div class="note">${total} lá${miss ? ` · ${miss} dòng không tìm thấy` : ""}${banned.length ? ` · <span class="bn">${banned.length} lá bị cấm: ${banned.map(r => esc(fullName(r.card))).join(", ")}</span>` : ""}</div>` + html;
   $("deckList").onclick = e => { const r = e.target.closest(".drow[data-i]"); if (r) openDetail(codes, +r.dataset.i); };
 }
 $("btnImport").onclick = () => { store.set("rb_deck", $("deckText").value); store.set("rb_deck_edit", "0"); drawDeck(); };
@@ -477,7 +493,7 @@ async function drawSettings(keepProg){
       <div class="note">Android (Chrome): menu ⋮ → "Thêm vào màn hình chính" hoặc "Cài đặt ứng dụng".<br>iPhone (Safari): nút Chia sẻ → "Thêm vào MH chính".</div>
     </div>
     <div class="box"><h3>Thông tin</h3>
-      <div class="note">Phiên bản ${APP_VER}<br>Đã dịch: ${done.join(", ") || "chưa có"}<br>Ảnh thẻ và nội dung gốc thuộc Riot Games. Bản dịch tiếng Việt để tham khảo khi chơi.</div>
+      <div class="note">Phiên bản ${APP_VER}<br>Đã dịch: ${done.join(", ") || "chưa có"}<br>Danh sách cấm: cập nhật ${window.RB_BANNED_UPDATED || "—"} theo thông báo chính thức của Riot (đợt mới nhất có hiệu lực 23/11/2026).<br>Ảnh thẻ và nội dung gốc thuộc Riot Games. Bản dịch tiếng Việt để tham khảo khi chơi.</div>
     </div>`;
   $("sLimit").onchange = async e => { store.set("rb_limit", e.target.value); await trimCache(); drawSettings(); };
   $("sClear").onclick = async () => { if (!confirm("Xóa toàn bộ ảnh đã lưu? Chữ dịch vẫn giữ.")) return; if (HAS_CACHE) await caches.delete(IMG_CACHE); drawSettings(); };
