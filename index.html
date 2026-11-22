@@ -87,7 +87,8 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .tile .nm{font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---- chi tiết thẻ (lớp phủ toàn màn hình) ---- */
-.detail{position:fixed;inset:0;z-index:10;background:var(--paper);overflow-y:auto;padding-bottom:calc(20px + var(--safeB))}
+.detail{position:fixed;inset:0;z-index:10;background:var(--paper);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding-bottom:calc(20px + var(--safeB))}
+#dBody{will-change:transform}
 .detail .top button{padding:6px 10px;background:var(--paper)}
 .imgs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px;border-bottom:var(--line)}
 .imgs figure{margin:0;flex:0 0 calc((100% - 10px)/2);min-width:0;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -129,9 +130,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .saved .open small{color:var(--mute);font-size:11px}
 .saved .open.cur{background:var(--tang);color:var(--black)}.saved .open.cur small{color:var(--black)}
 /* chi tiết thẻ: hiệu ứng khi vuốt chuyển thẻ */
-#dBody.swl{animation:swl .18s ease-out}#dBody.swr{animation:swr .18s ease-out}
-@keyframes swl{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
-@keyframes swr{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
+
 .drow{display:grid;grid-template-columns:34px 44px minmax(0,1fr);gap:10px;align-items:center;padding:5px 0}
 .drow img{width:44px;aspect-ratio:63/88;object-fit:cover;border:var(--line);display:block;background:var(--paper2)}
 .drow small{color:var(--mute);display:block;font-size:11px}
@@ -215,7 +214,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v5.3 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
+const APP_VER = "v5.4 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
@@ -359,7 +358,7 @@ const DT = { codes: [], i: 0 };
 function openDetail(codes, i){
   DT.codes = codes; DT.i = i;
   if ($("detail").hidden) { $("detail").hidden = false; document.body.style.overflow = "hidden"; openLayer("detail"); }
-  drawDetail();
+  slide(0, 0); drawDetail(); preloadNear();
 }
 function drawDetail(){
   const c = BY_CODE.get(DT.codes[DT.i]); if (!c) return;
@@ -389,29 +388,49 @@ function drawDetail(){
   $("detail").scrollTop = 0;
 }
 $("dBack").onclick = () => history.back();
-function goCard(step){                                  // step = -1 thẻ trước, +1 thẻ sau
-  const j = DT.i + step; if (j < 0 || j >= DT.codes.length) return;
-  DT.i = j; drawDetail();
-  const b = $("dBody"); b.classList.remove("swl", "swr"); void b.offsetWidth; b.classList.add(step > 0 ? "swl" : "swr");
+/* --- chuyển thẻ: nút ‹ › và vuốt (thẻ đi theo ngón tay) --- */
+const SW = { ms: 170 };                                     // thời gian trượt (ms)
+function preloadNear(){                                     // tải sẵn ảnh thẻ trước/sau → không giật khi đổi
+  [DT.i - 1, DT.i + 1].forEach(j => { const c = BY_CODE.get(DT.codes[j]); if (c) variantsOf(c).forEach(v => { new Image().src = img(v); }); });
+}
+function slide(x, ms){ const b = $("dBody"); b.style.transition = ms ? `transform ${ms}ms ease-out` : "none"; b.style.transform = x ? `translateX(${x}px)` : ""; }
+function goCard(step){                                      // step = -1 thẻ trước, +1 thẻ sau
+  const j = DT.i + step; if (j < 0 || j >= DT.codes.length) { slide(0, SW.ms); return; }
+  if (SW.busy) return; SW.busy = true; setTimeout(() => SW.busy = false, SW.ms * 2 + 40);   // chặn bấm/vuốt dồn dập
+  const w = $("detail").clientWidth;
+  slide(-step * w, SW.ms);                                   // 1. trượt thẻ cũ ra khỏi màn
+  setTimeout(() => {
+    DT.i = j; drawDetail();                                  // 2. vẽ thẻ mới ở phía đối diện
+    slide(step * w * 0.35, 0);
+    requestAnimationFrame(() => requestAnimationFrame(() => slide(0, SW.ms)));   // 3. trượt vào giữa
+    preloadNear();
+  }, SW.ms);
 }
 $("dPrev").onclick = () => goCard(-1);
 $("dNext").onclick = () => goCard(1);
-/* vuốt ngang trên màn chi tiết: trái → thẻ sau, phải → thẻ trước
-   bỏ qua khi bắt đầu trong dải ảnh biến thể đang cuộn ngang được */
 (() => {
-  let sx = 0, sy = 0, st = 0, skip = false;
   const el = $("detail");
+  let sx = 0, sy = 0, st = 0, dx = 0, mode = "";               // mode: "" chưa rõ · "x" vuốt ngang · "y" cuộn dọc · "skip"
   el.addEventListener("touchstart", e => {
-    if (e.touches.length !== 1) { skip = true; return; }
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now();
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; mode = "";
     const strip = e.target.closest(".imgs");
-    skip = !!(strip && strip.scrollWidth > strip.clientWidth + 4);
+    if (e.touches.length !== 1 || (strip && strip.scrollWidth > strip.clientWidth + 4)) mode = "skip";
   }, { passive: true });
-  el.addEventListener("touchend", e => {
-    if (skip || !$("zoom").hidden) return;
-    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Date.now() - st < 700 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) goCard(dx < 0 ? 1 : -1);
+  el.addEventListener("touchmove", e => {
+    if (mode === "skip" || mode === "y") return;
+    const t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
+    if (!mode) { if (Math.abs(mx) < 10 && Math.abs(my) < 10) return; mode = Math.abs(mx) > Math.abs(my) ? "x" : "y"; if (mode === "y") return; }
+    const edge = (mx > 0 && DT.i === 0) || (mx < 0 && DT.i === DT.codes.length - 1);
+    dx = edge ? mx * 0.25 : mx;                                // hết thẻ → kéo nặng tay
+    slide(dx, 0);
   }, { passive: true });
+  const end = () => {
+    if (mode !== "x") return; mode = "";
+    const fast = Math.abs(dx) > 30 && Date.now() - st < 250;
+    if (Math.abs(dx) > 70 || fast) goCard(dx < 0 ? 1 : -1); else slide(0, SW.ms);
+  };
+  el.addEventListener("touchend", end, { passive: true });
+  el.addEventListener("touchcancel", () => { if (mode === "x") slide(0, SW.ms); mode = ""; }, { passive: true });
 })();
 $("dBody").onclick = e => {
   const f = e.target.closest("figure"); if (!f) return;
