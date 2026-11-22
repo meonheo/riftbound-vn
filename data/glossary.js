@@ -1,0 +1,63 @@
+/* =========================================================
+   GLOSSARY — keyword (giữ tiếng Anh) + giải thích tiếng Việt
+   Nguồn: Riftbound Core Rules (rev 2026-07-16)
+          + Radiance Patch Notes (hiệu lực 16/10/2026)
+   ========================================================= */
+window.RB_GLOSSARY = {
+  "Accelerate": "Khi chơi đơn vị này, bạn có thể trả thêm 1 Energy và 1 Power cùng domain với đơn vị để nó vào sân ở trạng thái sẵn sàng thay vì kiệt sức.",
+  "Action": "Cho phép chơi hoặc kích hoạt trong showdown, ở lượt của bất kỳ người chơi nào. Ngoài ra không có tác dụng gì khác.",
+  "Reaction": "Có mọi quyền của Action, và còn được chơi hoặc kích hoạt cả khi đang có phép hay kỹ năng chờ thực thi, ở lượt bất kỳ.",
+  "Ambush": "Có thể chơi lên một chiến trường nơi bạn đang kiểm soát đơn vị, và có Reaction khi được chơi lên đó.",
+  "Assault": "Khi đang tấn công, đơn vị này được +X Might (không ghi số = 1). Nhiều Assault cộng dồn.",
+  "Shield": "Khi đang phòng thủ, đơn vị này được +X Might (không ghi số = 1). Nhiều Shield cộng dồn.",
+  "Tank": "Khi phân bổ sát thương giao tranh, đơn vị này phải nhận đủ sát thương chí mạng trước các đơn vị phe ta không có Tank.",
+  "Backline": "Sát thương chí mạng chỉ được phân bổ cho đơn vị này sau khi các đơn vị phe ta không có Backline đã nhận đủ.",
+  "Deathknell": "Kích hoạt khi lá này bị tiêu diệt và đưa vào mộ bài. Nếu cái chết bị thay thế (ví dụ bị thu hồi), hiệu ứng không kích hoạt.",
+  "Deflect": "Đối thủ phải trả thêm X Power bất kỳ domain khi chọn lá này bằng phép hoặc kỹ năng (không ghi số = 1). Nhiều Deflect cộng dồn.",
+  "Deploy": "Trang bị có Deploy chỉ được chơi lên chiến trường (phe ta, địch đang chiếm hoặc chưa ai kiểm soát đều được) và chỉ tác dụng tại đó. Nếu đối thủ giữ chiến trường này, trang bị bị tiêu diệt.",
+  "Disarm": "Lần đầu đơn vị này tấn công trong mỗi trận giao tranh, một đơn vị địch tại chiến trường đó bị -X Might trong lượt này (không ghi số = 1). Nhiều Disarm cộng dồn thành một lần kích hoạt.",
+  "Show Off": "Khi chơi lá bài, bạn có thể lật lộ một lá phù hợp trên tay, hoặc chọn một lá/token phe ta trên sân có đặc điểm yêu cầu, để mở khóa hiệu ứng thêm. Không dùng được lá đang úp. Thông tin của lá được chọn chốt tại thời điểm đó.",
+  "Empower": "Trả chi phí để cho lá này trạng thái Empowered. Chỉ dùng được khi lá này chưa Empowered.",
+  "Empowered": "Khi có trạng thái Empowered, lá này nhận kỹ năng ghi sau từ khóa.",
+  "Equip": "Trên trang bị Equipment: trả chi phí để gắn nó vào một đơn vị phe ta (đơn vị đó là mục tiêu).",
+  "Quick-Draw": "Trang bị này có Reaction. Khi được chơi, nó gắn ngay vào một đơn vị phe ta.",
+  "Weaponmaster": "Khi chơi đơn vị này, bạn có thể trả chi phí Equip của một Equipment (giảm 1 Power bất kỳ) để gắn Equipment đó vào đơn vị này, bỏ qua giới hạn thời điểm Equip thông thường.",
+  "Flow": "Bạn có thể chơi phép này từ mộ bài với chi phí Flow, sau đó trục xuất nó. Không thay đổi thời điểm được phép chơi.",
+  "Ganking": "Cho phép di chuyển tiêu chuẩn từ chiến trường này sang chiến trường khác. Không thêm lượt di chuyển, không thêm chi phí.",
+  "Hidden": "Trong lượt của bạn, khi không có gì đang chờ thực thi, trả 1 Power bất kỳ để giấu úp lá này tại một chiến trường bạn kiểm soát. Từ lượt sau, nó có Reaction và được chơi miễn phí, nhưng chỉ tại chiến trường đó.",
+  "Hunt": "Khi bạn chinh phục hoặc giữ chiến trường bằng lá này, bạn nhận X XP. Nhiều Hunt cộng dồn.",
+  "Legion": "Nếu trong lượt này bạn đã chơi một lá khác từ bộ bài chính, lá này nhận kỹ năng ghi sau. Một lá thỏa mãn mọi Legion.",
+  "Level": "Khi bạn có từ N XP trở lên, lá này nhận kỹ năng ghi sau. Được kiểm tra liên tục.",
+  "Repeat": "Khi chơi hoặc kích hoạt, bạn có thể trả chi phí này để thực hiện chỉ dẫn thêm một lần. Lá vẫn chỉ tính là được chơi một lần.",
+  "Temporary": "Bị tiêu diệt vào đầu giai đoạn Khởi đầu của người kiểm soát, trước khi tính điểm.",
+  "Unique": "Deck chỉ được có một lá mang tên này. Không ảnh hưởng lối chơi.",
+  "Vision": "Khi được chơi, Predict. Nhiều Vision kích hoạt riêng từng lần.",
+  "Add": "Đưa tài nguyên được ghi vào Rune Pool. Thực thi ngay, không thể bị phản ứng.",
+  "Buff": "Đặt một buff (+1 Might) lên đơn vị. Mỗi đơn vị chỉ có tối đa một buff, nên buff thêm không có tác dụng.",
+  "Burn": "Đưa X lá trên cùng của bộ bài chính được chỉ định vào mộ bài của chủ sở hữu. Phải burn nhiều nhất có thể.",
+  "Mighty": "Đơn vị là Mighty khi có Might từ 5 trở lên (tính cả thay đổi tạm thời). Trong mộ bài, tính theo Might in trên thẻ.",
+  "Predict": "Xem X lá trên cùng của bộ bài chính (không ghi số = 1), tái chế bao nhiêu lá tùy ý, đặt các lá còn lại lên trên theo thứ tự tùy ý.",
+  "Stun": "Đơn vị bị Stun không góp Might trong bước gây sát thương giao tranh, nhưng vẫn phải nhận đủ sát thương bằng Might của nó mới bị tiêu diệt. Hết hiệu lực khi dọn dẹp cuối lượt."
+};
+
+/* ---------- Macro: các đoạn nhắc luật lặp lại nhiều lần ---------- */
+window.RB_MACROS = {
+  "{DEPLOY}":  "[Deploy] (Chỉ được chơi lá này lên một chiến trường. Khi đối thủ giữ chiến trường đó, tiêu diệt lá này.)",
+  "{ACTION}":  "[Action] (Chơi trong lượt của bạn hoặc trong showdown.)",
+  "{REACTION}":"[Reaction] (Chơi bất cứ lúc nào, kể cả trước khi phép và kỹ năng được thực thi.)",
+  "{HIDDEN}":  "[Hidden] (Giấu úp ngay với giá [A], sau đó dùng để phản ứng với giá [0].)",
+  "{ACCEL}":   "[Accelerate] (Bạn có thể trả thêm [1][C] để lá này vào sân ở trạng thái sẵn sàng.)",
+  "{DEFLECT}": "[Deflect] (Đối thủ phải trả [A] để chọn lá này bằng phép hoặc kỹ năng.)",
+  "{GANK}":    "[Ganking] (Lá này có thể di chuyển từ chiến trường này sang chiến trường khác.)",
+  "{TANK}":    "[Tank] (Lá này phải được phân bổ sát thương giao tranh trước tiên.)",
+  "{DISARM}":  "[Disarm] (Khi lá này tấn công, cho một đơn vị địch tại đây -1 [S] trong lượt này.)",
+  "{DISARM2}": "[Disarm 2] (Khi lá này tấn công, cho một đơn vị địch tại đây -2 [S] trong lượt này.)",
+  "{PREDICT}": "[Predict]. (Xem lá trên cùng của bộ bài chính. Bạn có thể tái chế nó.)",
+  "{STUNR}":   "(Nó không gây sát thương giao tranh trong lượt này.)",
+  "{BUFFR}":   "(Cho nó một buff +1 [S] nếu nó chưa có.)",
+  "{MIGHTY}":  "(Một đơn vị là Mighty khi có từ 5 [S] trở lên.)",
+  "{BOMB}":    "(Token này có [Deploy]. Khi nó bị tiêu diệt, gây 2 sát thương lên một kẻ địch tại đó và tiêu diệt các Bomb khác của bạn tại đó.)",
+  "{GOLD}":    "(Token này có: \"[Reaction][>] Tiêu diệt lá này, [T]: [Add] [A].\")",
+  "{DKR}":     "(Khi lá này bị tiêu diệt, nhận hiệu ứng.)",
+  "{BANISHTOP}": "trục xuất lá trên cùng của bộ bài chính. Cho đến giai đoạn Kết thúc tiếp theo của bạn, bạn có thể chơi lá đó. (Bạn vẫn phải trả chi phí của nó.)"
+};

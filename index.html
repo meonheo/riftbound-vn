@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EAC119">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Riftbound VN">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap">
+<title>Riftbound VN</title>
+<!-- =========================================================
+     1. STYLE — cùng bảng màu bản máy tính, bố cục cho màn hình dọc
+     ========================================================= -->
+<style>
+:root{
+  --ink:#1D1D1B; --paper:#EAE4DA; --paper2:#F3EEE6; --mustard:#EAC119; --tang:#ED773C;
+  --lav:#808BC5; --tea:#245E55; --pink:#EAA7C7; --sky:#9ED6DF; --red:#C63F3E; --mute:#6b665d;
+  --line:1.5px solid var(--ink);
+  --mono:"IBM Plex Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --safeB:env(safe-area-inset-bottom,0px); --safeT:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--paper)}
+body{font-family:var(--mono);color:var(--ink);font-size:14px;overscroll-behavior:none}
+button,select,input,textarea{font-family:inherit;font-size:14px;color:var(--ink);border-radius:0}
+button{background:var(--paper);border:var(--line);padding:8px 12px}
+button:active{background:var(--paper2)}
+button.dark{background:var(--ink);color:var(--paper)}
+button.orange{background:var(--tang)}
+select,input[type=search],textarea{border:var(--line);background:var(--paper2);padding:8px;-webkit-appearance:none;appearance:none}
+[hidden]{display:none!important}
+
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.view{flex:1;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch}
+.view.on{display:block}
+.top{position:sticky;top:0;z-index:3;background:var(--mustard);border-bottom:var(--line);display:flex;gap:8px;align-items:center;padding:calc(8px + var(--safeT)) 10px 8px}
+.top input{flex:1;min-width:0}
+.top h1{font-size:15px;margin:0;font-weight:600;flex:1}
+.nav{display:flex;background:var(--tang);border-top:var(--line);padding-bottom:var(--safeB)}
+.nav button{flex:1;background:none;border:none;font-size:11px;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav button.on{background:var(--ink);color:var(--paper)}
+.chip{border:var(--line);padding:4px 9px;font-size:12px;background:var(--paper);display:inline-block}
+.chip.on{background:var(--tang)}
+.tag{border:var(--line);padding:2px 7px;font-size:11px;background:var(--paper);display:inline-block}
+.d-F{background:var(--red);color:#fff}.d-C{background:var(--tea);color:#fff}.d-M{background:var(--sky)}
+.d-B{background:var(--tang)}.d-X{background:var(--lav);color:#fff}.d-O{background:var(--mustard)}.d-N{background:#cfc8bb}
+
+/* ---- thư viện ---- */
+.fpanel{border-bottom:var(--line);padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--paper2)}
+.fpanel .row{display:flex;flex-wrap:wrap;gap:6px}
+.fpanel select{flex:1}
+.sub{display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 8px 12px}
+.tile .im{width:100%;aspect-ratio:63/88;border:var(--line);background:var(--paper2);display:block;object-fit:cover}
+.tile.land .im{object-fit:contain}
+.tile .nm{font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- chi tiết thẻ (lớp phủ toàn màn hình) ---- */
+.detail{position:fixed;inset:0;z-index:10;background:var(--paper);overflow-y:auto;padding-bottom:calc(20px + var(--safeB))}
+.detail .top button{padding:6px 10px;background:var(--paper)}
+.imgs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px;border-bottom:var(--line)}
+.imgs figure{margin:0;flex:0 0 calc((100% - 10px)/2);min-width:0;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:6px}
+.imgs.one figure{flex-basis:64%}
+.imgs figure.land{flex-basis:100%}
+.imgs img{width:100%;display:block;aspect-ratio:744/1039;object-fit:cover;background:var(--paper2)}
+.imgs figure.land img{aspect-ratio:1040/744}
+.imgs figcaption{font-size:10.5px;background:#DDD6CA;padding:3px 8px;text-align:center;max-width:100%}
+.hint{font-size:11px;color:var(--mute);padding:6px 12px 0}
+.body{padding:12px 14px}
+.body h2{font-size:17px;margin:0 0 8px;font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:5px}
+.sec{border-top:var(--line);padding-top:10px;margin-top:12px}
+.sec h3{font-size:12px;margin:0 0 8px;font-weight:600;letter-spacing:.04em}
+.txt{line-height:1.8;font-size:14.5px}
+.kw{background:var(--pink);border:1px solid var(--ink);padding:0 4px}
+.sym{display:inline-block;border:1px solid var(--ink);padding:0 4px;font-size:11px;line-height:17px;vertical-align:1px;background:var(--paper2)}
+.sym.en{border-radius:50%;min-width:19px;text-align:center;padding:0;background:#fff}
+.sym.ex{background:var(--ink);color:var(--paper)}
+.kwrow{margin:0 0 10px;line-height:1.7}
+.empty{color:var(--mute);font-style:italic}
+.zoom{position:fixed;inset:0;z-index:20;background:rgba(29,29,27,.94);display:flex;align-items:center;justify-content:center;padding:10px}
+.zoom img{max-width:100%;max-height:100%}
+
+/* ---- deck / keyword / cài đặt ---- */
+.pad{padding:12px;display:flex;flex-direction:column;gap:10px}
+.pad textarea{min-height:150px;line-height:1.5;resize:vertical}
+.dsec h3{font-size:12px;margin:14px 0 6px;font-weight:600;border-bottom:var(--line);padding-bottom:4px}
+.drow{display:grid;grid-template-columns:34px 44px minmax(0,1fr);gap:10px;align-items:center;padding:5px 0}
+.drow img{width:44px;aspect-ratio:63/88;object-fit:cover;border:var(--line);display:block;background:var(--paper2)}
+.drow small{color:var(--mute);display:block;font-size:11px}
+.drow.err{color:var(--red)}
+.kwcard{border:var(--line);padding:10px;background:var(--paper2);line-height:1.7}
+.box{border:var(--line);padding:12px;background:var(--paper2);display:flex;flex-direction:column;gap:8px;line-height:1.6}
+.box h3{margin:0;font-size:13px;font-weight:600}
+.prog{height:10px;border:var(--line);background:var(--paper)}
+.prog div{height:100%;background:var(--tang);width:0}
+.note{font-size:12px;color:var(--mute);line-height:1.6}
+.sets{display:flex;flex-direction:column;gap:6px}
+.sets button{text-align:left;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ---- thư viện ---- -->
+  <section class="view on" id="vLib">
+    <header class="top"><input type="search" id="q" placeholder="Tìm tên, mã, keyword…"><button id="btnF">Lọc</button></header>
+    <div class="fpanel" id="fpanel" hidden>
+      <div class="row" id="fSets"></div>
+      <div class="row" id="fDoms"></div>
+      <div class="row"><select id="fType"></select><select id="fVar"><option value="base">Thẻ gốc</option><option value="var">Biến thể</option><option value="all">Tất cả</option></select></div>
+    </div>
+    <div class="sub"><span id="fsum"></span><span id="cnt"></span></div>
+    <div class="grid" id="grid"></div>
+    <div id="sentinel" style="height:40px"></div>
+  </section>
+  <!-- ---- deck ---- -->
+  <section class="view" id="vDeck">
+    <header class="top"><h1>Deck</h1><button id="btnDeckEdit">Sửa danh sách</button></header>
+    <div class="pad" id="deckEdit">
+      <textarea id="deckText" spellcheck="false" placeholder="Legend:&#10;1 Rengar, Pridestalker&#10;&#10;MainDeck:&#10;3 Grim Apothecary&#10;..."></textarea>
+      <button class="dark" id="btnImport">Xem deck</button>
+    </div>
+    <div class="pad" id="deckList"></div>
+  </section>
+  <!-- ---- keyword ---- -->
+  <section class="view" id="vKw">
+    <header class="top"><input type="search" id="qk" placeholder="Tìm keyword…"></header>
+    <div class="pad" id="kwList"></div>
+  </section>
+  <!-- ---- cài đặt ---- -->
+  <section class="view" id="vSet">
+    <header class="top"><h1>Cài đặt</h1></header>
+    <div class="pad" id="setPane"></div>
+  </section>
+  <nav class="nav">
+    <button class="on" data-v="vLib"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="7" height="10"/><rect x="14" y="4" width="7" height="10"/><path d="M3 18h18"/></svg>Thư viện</button>
+    <button data-v="vDeck"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="3" width="12" height="16"/><path d="M3 7v14h13"/></svg>Deck</button>
+    <button data-v="vKw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Keyword</button>
+    <button data-v="vSet"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Cài đặt</button>
+  </nav>
+</div>
+
+<!-- ---- lớp chi tiết + phóng to ---- -->
+<div class="detail" id="detail" hidden>
+  <header class="top"><button id="dBack">‹ Quay lại</button><span style="flex:1"></span><button id="dPrev">‹</button><span id="dPos" style="font-size:12px"></span><button id="dNext">›</button></header>
+  <div id="dBody"></div>
+</div>
+<div class="zoom" id="zoom" hidden><img id="zImg" alt=""></div>
+
+<!-- dữ liệu -->
+<script src="data/cards.js"></script>
+<script src="data/glossary.js"></script>
+<script src="data/vi_05_radiance.js"></script>
+<!-- thêm set dịch: <script src="data/vi_0X_....js"></script> + thêm vào SHELL trong sw.js -->
+
+<script>
+/* =========================================================
+   2. DATA — thẻ, chỉ mục tên, link ảnh
+   ========================================================= */
+const APP_VER = "v1 · Radiance";
+const F = window.RB_FIELDS, CDN = window.RB_CDN;
+const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
+const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
+const VI = window.RB_VI || {}, GLO = window.RB_GLOSSARY, MAC = window.RB_MACROS;
+const SETS = [["RAD","Radiance"],["VEN","Vendetta"],["UNL","Unleashed"],["SFD","Spiritforged"],["OGN","Origins"]];
+const SET_RANK = {OGN:1,OGS:1,SFD:2,UNL:3,VEN:4,RAD:5};
+const DOM = {F:"Fury",C:"Calm",M:"Mind",B:"Body",X:"Chaos",O:"Order",N:"Colorless"};
+const TYPES = ["Unit","Spell","Gear","Legend","Battlefield","Rune","Token"];
+const KB_PER_IMG = 50;                                       // ảnh nén WebP 500px (đo thực tế set Radiance)
+const img  = c => c.h ? `img/${c.code}.webp`                  // set đã dịch: ảnh nén đặt cùng app, lưu offline được
+                      : CDN + c.u + "?w=500&fm=webp&q=80";     // set chưa dịch: ảnh thu nhỏ từ Riot, cần mạng
+const imgAbs = c => new URL(img(c), location.href).href;
+const full = c => CDN + c.u;                                  // ảnh gốc khi phóng to (không lưu)
+const norm = s => (s || "").toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, " ").trim();
+const setKey = c => c.set === "OGS" ? "OGN" : c.set;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+const BY_NAME = new Map();
+const addIdx = (k, c) => { k = norm(k); if (!BY_NAME.has(k)) BY_NAME.set(k, []); if (!BY_NAME.get(k).includes(c)) BY_NAME.get(k).push(c); };
+const CHAMPS = new Set(CARDS.filter(c => c.champ).map(c => norm(c.champ)));
+CARDS.forEach(c => {
+  addIdx(c.name, c);
+  if (c.champ) { addIdx(c.champ + ", " + c.name, c); addIdx(c.champ + ", " + c.name.replace(/, Starter$/, ""), c); }
+  const m = c.name.match(/^(.+), ([^,]+)$/);
+  if (m && c.type !== "Unit" && CHAMPS.has(norm(m[2]))) addIdx(m[1], c);
+});
+const byPref = (a, b) => (b.base - a.base) || (SET_RANK[a.set] - SET_RANK[b.set]) || a.code.localeCompare(b.code);
+const variantsOf = c => [...(BY_NAME.get(norm(c.name)) || [c])].sort(byPref);
+const fullName = c => (c.type === "Legend" && c.champ ? c.champ + ", " : "") + c.name;
+
+/* =========================================================
+   3. RENDER CHỮ — macro, ký hiệu, keyword (giống bản máy tính)
+   ========================================================= */
+function expand(t){ let s = t; for (let i = 0; i < 3; i++) for (const k in MAC) s = s.split(k).join(MAC[k]); return s; }
+function renderText(raw, dom){
+  return esc(expand(raw)).replace(/\[([^\]]+)\]/g, (m, t) => {
+    if (/^\d+$/.test(t)) return `<span class="sym en">${t}</span>`;
+    if (t === "A") return `<span class="sym">Power</span>`;
+    if (t === "C") return `<span class="sym ${dom ? "d-" + dom[0] : ""}">Power ◆</span>`;
+    if (t === "T") return `<span class="sym ex">⟳</span>`;
+    if (t === "S" || t === "M") return `<span class="sym">Might</span>`;
+    if (t === "&gt;") return " — ";
+    return `<span class="kw">${t}</span>`;
+  }).replace(/\n/g, "<br>");
+}
+function keywordsOf(raw){
+  const out = [];
+  (expand(raw).match(/\[([^\]]+)\]/g) || []).forEach(m => {
+    const k = m.slice(1, -1).replace(/\s+\d+$/, "");
+    if (GLO[k] && !out.includes(k)) out.push(k);
+  });
+  return out;
+}
+
+/* =========================================================
+   4. ĐIỀU HƯỚNG — tab dưới, nút Back của điện thoại
+   ========================================================= */
+const LAYERS = [];                                   // lớp đang mở: "detail" | "zoom"
+function openLayer(name){ LAYERS.push(name); history.pushState({ l: LAYERS.length }, ""); }
+window.addEventListener("popstate", () => {
+  const top = LAYERS.pop();
+  if (top === "zoom") $("zoom").hidden = true;
+  if (top === "detail") { $("detail").hidden = true; document.body.style.overflow = ""; }
+});
+document.querySelectorAll(".nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".nav button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.v));
+  if (b.dataset.v === "vSet") drawSettings();
+});
+
+/* =========================================================
+   5. THƯ VIỆN — bộ lọc, lưới cuộn vô hạn
+   ========================================================= */
+const ST = { set: store.get("rb_set", "RAD"), dom: "", type: "", variant: "base", q: "", shown: 0, list: [] };
+const PAGE = 45;
+function drawFilters(){
+  $("fSets").innerHTML = `<span class="chip ${!ST.set ? "on" : ""}" data-set="">Mọi set</span>` +
+    SETS.map(([k, n]) => `<span class="chip ${ST.set === k ? "on" : ""}" data-set="${k}">${n}</span>`).join("");
+  $("fDoms").innerHTML = `<span class="chip ${!ST.dom ? "on" : ""}" data-dom="">Mọi domain</span>` +
+    Object.entries(DOM).map(([k, n]) => `<span class="chip ${ST.dom === k ? "on" : ""}" data-dom="${k}">${n}</span>`).join("");
+  $("fType").innerHTML = `<option value="">Mọi loại</option>` + TYPES.map(t => `<option ${ST.type === t ? "selected" : ""}>${t}</option>`).join("");
+  $("fVar").value = ST.variant;
+  const parts = [ST.set ? SETS.find(s => s[0] === ST.set)[1] : "Mọi set", ST.dom && DOM[ST.dom], ST.type, ST.variant === "base" ? "" : $("fVar").selectedOptions[0].text].filter(Boolean);
+  $("fsum").textContent = parts.join(" · ");
+}
+function filtered(){
+  const q = norm(ST.q);
+  return CARDS.filter(c => {
+    if (ST.set && setKey(c) !== ST.set) return false;
+    if (ST.variant === "base" && !c.base) return false;
+    if (ST.variant === "var" && c.base) return false;
+    if (ST.type && c.type !== ST.type) return false;
+    if (ST.dom && !(c.dom || "").includes(ST.dom)) return false;
+    if (q) {
+      const hay = norm(c.name + " " + c.code + " " + (c.champ || "") + " " + (VI[c.name] ? expand(VI[c.name]) : ""));
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function drawGrid(){
+  ST.list = filtered(); ST.shown = 0;
+  $("cnt").textContent = ST.list.length + " thẻ";
+  $("grid").innerHTML = ""; $("vLib").scrollTop = 0;
+  moreGrid();
+}
+function moreGrid(){
+  const chunk = ST.list.slice(ST.shown, ST.shown + PAGE); if (!chunk.length) return;
+  $("grid").insertAdjacentHTML("beforeend", chunk.map((c, i) =>
+    `<div class="tile ${c.landscape ? "land" : ""}" data-i="${ST.shown + i}">
+       <img class="im" loading="lazy" src="${img(c)}" alt=""><div class="nm">${esc(fullName(c))}</div></div>`).join(""));
+  ST.shown += chunk.length;
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting) moreGrid(); }, { root: $("vLib"), rootMargin: "600px" }).observe($("sentinel"));
+$("grid").onclick = e => { const t = e.target.closest(".tile"); if (t) openDetail(ST.list.map(c => c.code), +t.dataset.i); };
+$("btnF").onclick = () => { $("fpanel").hidden = !$("fpanel").hidden; $("btnF").classList.toggle("orange", !$("fpanel").hidden); };
+$("fpanel").onclick = e => {
+  const t = e.target.closest("[data-set],[data-dom]"); if (!t) return;
+  if (t.dataset.set !== undefined) { ST.set = t.dataset.set; store.set("rb_set", ST.set); }
+  else ST.dom = t.dataset.dom;
+  drawFilters(); drawGrid();
+};
+$("fType").onchange = e => { ST.type = e.target.value; drawFilters(); drawGrid(); };
+$("fVar").onchange = e => { ST.variant = e.target.value; drawFilters(); drawGrid(); };
+let qT; $("q").oninput = e => { clearTimeout(qT); qT = setTimeout(() => { ST.q = e.target.value; drawGrid(); }, 250); };
+
+/* =========================================================
+   6. CHI TIẾT THẺ — ảnh trên (vuốt ngang), bản dịch dưới
+   ========================================================= */
+const DT = { codes: [], i: 0 };
+function openDetail(codes, i){
+  DT.codes = codes; DT.i = i;
+  if ($("detail").hidden) { $("detail").hidden = false; document.body.style.overflow = "hidden"; openLayer("detail"); }
+  drawDetail();
+}
+function drawDetail(){
+  const c = BY_CODE.get(DT.codes[DT.i]); if (!c) return;
+  const vars = variantsOf(c), raw = VI[c.name];
+  const stats = [c.e !== "" ? `Energy ${c.e}` : "", c.p !== "" ? `Power ${c.p}` : "", c.m !== "" ? `Might ${c.m}` : ""].filter(Boolean);
+  const doms = (c.dom || "").split("").filter(Boolean).map(d => `<span class="tag d-${d}">${DOM[d]}</span>`).join("");
+  let body;
+  if (c.type === "Rune") body = `<div class="empty">Rune không có nội dung chữ — dùng để tạo Power cho domain ${DOM[c.dom] || ""}.</div>`;
+  else if (raw === undefined) body = `<div class="empty">Set ${c.setName} chưa được dịch.</div>`;
+  else body = `<div class="txt">${renderText(raw, c.dom)}</div>`;
+  const kws = raw ? keywordsOf(raw) : [];
+  $("dPos").textContent = `${DT.i + 1} / ${DT.codes.length}`;
+  $("dPrev").disabled = DT.i === 0; $("dNext").disabled = DT.i === DT.codes.length - 1;
+  $("dBody").innerHTML = `
+    <div class="imgs ${vars.length === 1 ? "one" : ""}">${vars.map(v => `
+      <figure class="${v.landscape ? "land" : ""}" data-code="${v.code}">
+        <img src="${img(v)}" alt="${esc(v.name)}"><figcaption>${v.code.toUpperCase()} · ${esc(v.variant)} · ${esc(v.rarity)}</figcaption>
+      </figure>`).join("")}</div>
+    <div class="hint">${vars.length > 2 ? "Vuốt ngang để xem thêm biến thể · " : ""}Chạm ảnh để phóng to</div>
+    <div class="body">
+      <h2>${esc(fullName(c))}</h2>
+      <div class="meta"><span class="tag">${c.setName}</span><span class="tag">${c.type}</span>${doms}${stats.map(s => `<span class="tag">${s}</span>`).join("")}</div>
+      <div class="sec"><h3>NỘI DUNG THẺ</h3>${body}</div>
+      ${kws.length ? `<div class="sec"><h3>KEYWORD</h3>${kws.map(k => `<div class="kwrow"><span class="kw">${k}</span> — ${esc(GLO[k])}</div>`).join("")}</div>` : ""}
+    </div>`;
+  $("detail").scrollTop = 0;
+}
+$("dBack").onclick = () => history.back();
+$("dPrev").onclick = () => { if (DT.i > 0) { DT.i--; drawDetail(); } };
+$("dNext").onclick = () => { if (DT.i < DT.codes.length - 1) { DT.i++; drawDetail(); } };
+$("dBody").onclick = e => {
+  const f = e.target.closest("figure"); if (!f) return;
+  const c = BY_CODE.get(f.dataset.code), z = $("zImg");
+  z.onerror = () => { z.onerror = null; z.src = img(c); };      // mất mạng → dùng ảnh đã lưu
+  z.src = full(c); $("zoom").hidden = false; openLayer("zoom");
+};
+$("zoom").onclick = () => history.back();
+
+/* =========================================================
+   7. DECK — dán danh sách, xem bản dịch từng lá
+   ========================================================= */
+const SECTIONS = [["legend","Legend"],["champion","Champion"],["maindeck","MainDeck"],["battlefields","Battlefields"],["runepool","Rune Pool"],["sideboard","Sideboard"]];
+const HEAD = {legend:"legend",legends:"legend",champion:"champion",champions:"champion",maindeck:"maindeck",main:"maindeck",battlefield:"battlefields",battlefields:"battlefields",runepool:"runepool",runes:"runepool",rune:"runepool",sideboard:"sideboard",side:"sideboard"};
+function parseDeck(text){
+  const sec = Object.fromEntries(SECTIONS.map(([k]) => [k, []]));
+  let cur = "maindeck";
+  text.split(/\r?\n/).forEach(line => {
+    const l = line.trim(); if (!l) return;
+    const hk = HEAD[l.toLowerCase().replace(/[\s:]/g, "")]; if (hk) { cur = hk; return; }
+    const m = l.match(/^(\d+)\s*x?\s+(.+)$/i);
+    const qty = m ? +m[1] : 1, name = (m ? m[2] : l).trim();
+    const list = BY_NAME.get(norm(name)) || [];
+    sec[cur].push({ qty, name, card: list.length ? [...list].sort(byPref)[0] : null });
+  });
+  return sec;
+}
+function drawDeck(){
+  const text = $("deckText").value.trim();
+  $("deckEdit").hidden = !!text && store.get("rb_deck_edit", "0") !== "1";
+  if (!text) { $("deckList").innerHTML = `<div class="note">Dán danh sách deck theo mẫu (Legend:, Champion:, MainDeck:, Battlefields:, Rune Pool:, Sideboard:) rồi bấm Xem deck. Chạm vào từng lá để đọc bản dịch.</div>`; return; }
+  const sec = parseDeck(text), codes = [];
+  let total = 0, miss = 0;
+  const html = SECTIONS.map(([k, label]) => {
+    const rows = sec[k]; if (!rows.length) return "";
+    return `<div class="dsec"><h3>${label} (${rows.reduce((a, r) => a + r.qty, 0)})</h3>` + rows.map(r => {
+      total += r.qty;
+      if (!r.card) { miss++; return `<div class="drow err"><b>${r.qty}×</b><span></span><span>${esc(r.name)}<small>Không tìm thấy tên này</small></span></div>`; }
+      codes.push(r.card.code);
+      const tr = VI[r.card.name] !== undefined || r.card.type === "Rune";
+      return `<div class="drow" data-i="${codes.length - 1}"><b>${r.qty}×</b><img loading="lazy" src="${img(r.card)}" alt=""><span>${esc(fullName(r.card))}<small>${r.card.code.toUpperCase()}${tr ? "" : " · chưa dịch"}</small></span></div>`;
+    }).join("") + `</div>`;
+  }).join("");
+  $("deckList").innerHTML = `<div class="note">${total} lá${miss ? ` · ${miss} dòng không tìm thấy` : ""}</div>` + html;
+  $("deckList").onclick = e => { const r = e.target.closest(".drow[data-i]"); if (r) openDetail(codes, +r.dataset.i); };
+}
+$("btnImport").onclick = () => { store.set("rb_deck", $("deckText").value); store.set("rb_deck_edit", "0"); drawDeck(); };
+$("btnDeckEdit").onclick = () => { const show = $("deckEdit").hidden; store.set("rb_deck_edit", show ? "1" : "0"); $("deckEdit").hidden = !show; };
+
+/* =========================================================
+   8. KEYWORD
+   ========================================================= */
+function drawKw(){
+  const q = norm($("qk").value);
+  const ks = Object.keys(GLO).sort().filter(k => !q || norm(k + " " + GLO[k]).includes(q));
+  $("kwList").innerHTML = ks.map(k => `<div class="kwcard"><span class="kw">${k}</span><div style="margin-top:6px">${esc(GLO[k])}</div></div>`).join("") || `<div class="note">Không có keyword phù hợp.</div>`;
+}
+$("qk").oninput = drawKw;
+
+/* =========================================================
+   9. ẢNH LƯU TRONG MÁY — đếm, giới hạn, tải trước, xóa
+   ========================================================= */
+const IMG_CACHE = "rb-img", HAS_CACHE = "caches" in window;
+const LIMITS = [["300","300 ảnh (~15 MB)"],["600","600 ảnh (~30 MB)"],["1500","1500 ảnh (~70 MB, đủ cả 5 set)"],["0","Không giới hạn"]];
+const getLimit = () => +store.get("rb_limit", "600");
+async function cachedKeys(){ if (!HAS_CACHE) return []; return (await caches.open(IMG_CACHE)).keys(); }
+async function trimCache(){
+  const lim = getLimit(); if (!lim || !HAS_CACHE) return;
+  const c = await caches.open(IMG_CACHE), ks = await c.keys();
+  for (let i = 0; i < ks.length - lim; i++) await c.delete(ks[i]);      // xóa ảnh lưu lâu nhất trước
+}
+let busy = false;
+async function prefetchSet(key){
+  if (busy) return; busy = true;
+  const list = CARDS.filter(c => setKey(c) === key && c.h), have = new Set((await cachedKeys()).map(r => r.url));
+  const todo = list.filter(c => !have.has(imgAbs(c)));
+  if (getLimit() && have.size + todo.length > getLimit()) { store.set("rb_limit", "0"); }
+  let done = 0, fail = 0;
+  const bar = $("pBar"), lab = $("pLab"); $("pBox").hidden = false;
+  const step = () => { bar.style.width = (100 * (done + fail) / Math.max(1, todo.length)) + "%"; lab.textContent = `${SETS.find(s => s[0] === key)[1]}: ${done + fail}/${todo.length}${fail ? ` · lỗi ${fail}` : ""}`; };
+  step();
+  let k = 0;
+  const worker = async () => { while (k < todo.length) { const c = todo[k++]; try { const r = await fetch(img(c)); r.ok ? done++ : fail++; } catch (e) { fail++; } step(); } };
+  await Promise.all(Array.from({ length: 6 }, worker));
+  lab.textContent += fail ? " · bấm lại để tải phần lỗi" : " · xong";
+  busy = false; drawSettings(true);
+}
+async function drawSettings(keepProg){
+  const n = (await cachedKeys()).length;
+  let mb = Math.round(n * KB_PER_IMG / 1024);
+  try { if (navigator.storage && navigator.storage.estimate) mb = Math.round((await navigator.storage.estimate()).usage / 1048576); } catch (e) {}
+  const counts = Object.fromEntries(SETS.map(([k]) => [k, CARDS.filter(c => setKey(c) === k && c.h).length]));
+  const done = SETS.filter(([k]) => {                         // set "đã dịch" khi ≥ 90% thẻ gốc có bản dịch
+    const b = CARDS.filter(c => setKey(c) === k && c.base && c.type !== "Rune");
+    return b.length && b.filter(c => VI[c.name] !== undefined).length / b.length >= .9;
+  }).map(s => s[1]);
+  const prog = keepProg && $("pBox") ? $("pBox").outerHTML : `<div class="box" id="pBox" hidden><div class="prog"><div id="pBar"></div></div><div id="pLab" class="note"></div></div>`;
+  $("setPane").innerHTML = `
+    <div class="box"><h3>Ảnh đã lưu trong máy</h3>
+      <div>${n} ảnh · app đang dùng khoảng ${mb} MB</div>
+      <label>Giới hạn <select id="sLimit">${LIMITS.map(([v, t]) => `<option value="${v}" ${+v === getLimit() ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+      <div class="note">Vượt giới hạn thì app tự xóa ảnh lưu lâu nhất. Chữ dịch luôn được giữ.</div>
+      <button id="sClear">Xóa ảnh đã lưu</button>
+      ${HAS_CACHE ? "" : `<div class="note">Trình duyệt này không hỗ trợ lưu ảnh offline.</div>`}
+    </div>
+    <div class="box"><h3>Tải trước ảnh để xem offline</h3>
+      <div class="note">Nên dùng Wi-Fi. Mỗi ảnh khoảng ${KB_PER_IMG} KB.</div>
+      <div class="sets">${SETS.map(([k, nm]) => counts[k]
+        ? `<button data-pre="${k}"><span>${nm}</span><span>${counts[k]} ảnh · ~${Math.round(counts[k] * KB_PER_IMG / 1024)} MB</span></button>`
+        : `<button disabled style="opacity:.55"><span>${nm}</span><span>có khi dịch set này</span></button>`).join("")}</div>
+      <div class="note">Set chưa dịch vẫn xem được ảnh khi có mạng, nhưng chưa lưu offline.</div>
+      ${prog}
+    </div>
+    <div class="box"><h3>Cài app lên màn hình chính</h3>
+      <button class="orange" id="sInstall" hidden>Cài app</button>
+      <div class="note">Android (Chrome): menu ⋮ → "Thêm vào màn hình chính" hoặc "Cài đặt ứng dụng".<br>iPhone (Safari): nút Chia sẻ → "Thêm vào MH chính".</div>
+    </div>
+    <div class="box"><h3>Thông tin</h3>
+      <div class="note">Phiên bản ${APP_VER}<br>Đã dịch: ${done.join(", ") || "chưa có"}<br>Ảnh thẻ và nội dung gốc thuộc Riot Games. Bản dịch tiếng Việt để tham khảo khi chơi.</div>
+    </div>`;
+  $("sLimit").onchange = async e => { store.set("rb_limit", e.target.value); await trimCache(); drawSettings(); };
+  $("sClear").onclick = async () => { if (!confirm("Xóa toàn bộ ảnh đã lưu? Chữ dịch vẫn giữ.")) return; if (HAS_CACHE) await caches.delete(IMG_CACHE); drawSettings(); };
+  document.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => prefetchSet(b.dataset.pre));
+  if (deferredInstall) { $("sInstall").hidden = false; $("sInstall").onclick = async () => { deferredInstall.prompt(); deferredInstall = null; $("sInstall").hidden = true; }; }
+}
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; });
+
+/* =========================================================
+   10. KHỞI ĐỘNG
+   ========================================================= */
+drawFilters(); drawGrid(); drawKw();
+$("deckText").value = store.get("rb_deck", ""); drawDeck();
+if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js");
+setTimeout(trimCache, 3000);
+</script>
+</body>
+</html>
