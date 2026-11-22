@@ -125,6 +125,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .dnote{padding:10px 10px 0;font-size:12px;color:var(--mute);line-height:1.6}
 .qty{position:absolute;right:4px;bottom:4px;background:var(--black);color:#EAE4DA;font-size:11px;font-weight:600;padding:1px 6px;border:1px solid var(--black)}
 .tile.miss .im{display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:10.5px;color:var(--red)}
+.top .bk{padding:6px 12px}
 .saved{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
 .saved .open{text-align:left;display:flex;flex-direction:column;gap:2px}
 .saved .open small{color:var(--mute);font-size:11px}
@@ -162,17 +163,18 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
   </section>
   <!-- ---- deck ---- -->
   <section class="view" id="vDeck">
-    <header class="top"><h1 id="deckTitle">Deck</h1><button id="btnSaved">Đã lưu</button><button id="btnDeckEdit">Sửa</button></header>
-    <!-- danh sách deck đã lưu -->
-    <div class="pad" id="savedPanel" hidden></div>
-    <!-- nhập / sửa danh sách -->
-    <div class="pad" id="deckEdit">
+    <header class="top" id="dkTop"></header>
+    <!-- màn 1: danh sách deck đã lưu -->
+    <div class="pad" id="dkList"></div>
+    <!-- màn 2: tạo / sửa deck -->
+    <div class="pad" id="dkEdit" hidden>
       <input type="search" id="deckName" placeholder="Tên deck (vd. Rengar Fury)" autocomplete="off">
       <textarea id="deckText" spellcheck="false" placeholder="Legend:&#10;1 Rengar, Pridestalker&#10;&#10;MainDeck:&#10;3 Grim Apothecary&#10;..."></textarea>
-      <div class="row2"><button class="dark" id="btnImport">Xem deck</button><button class="orange" id="btnSave">Lưu deck</button></div>
+      <div class="row2"><button id="btnCancel">Hủy</button><button class="orange" id="btnSave">Lưu deck</button></div>
       <div class="note" id="saveMsg"></div>
     </div>
-    <div id="deckList"></div>
+    <!-- màn 3: xem thẻ của một deck -->
+    <div id="dkView" hidden></div>
   </section>
   <!-- ---- keyword ---- -->
   <section class="view" id="vKw">
@@ -214,7 +216,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v5.5 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
+const APP_VER = "v5.6 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
@@ -285,6 +287,7 @@ window.addEventListener("popstate", () => {
   const top = LAYERS.pop();
   if (top === "zoom") $("zoom").hidden = true;
   if (top === "detail") { $("detail").hidden = true; document.body.style.overflow = ""; }
+  if (top === "deck") deckShow("list");
 });
 document.querySelectorAll(".nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".nav button").forEach(x => x.classList.toggle("on", x === b));
@@ -479,44 +482,58 @@ function parseDeck(text){
   });
   return sec;
 }
-/* --- 7a. kho deck đã lưu (localStorage "rb_decks") --- */
+/* --- 7a. kho deck đã lưu (localStorage "rb_decks": [{id,name,text,t}]) --- */
 const DECKS = {
-  all(){ try { return JSON.parse(store.get("rb_decks", "[]")) || []; } catch (e) { return []; } },
-  put(list){ store.set("rb_decks", JSON.stringify(list)); },
-  save(name, text){                                     // trùng tên → ghi đè
-    const list = DECKS.all().filter(d => d.name.toLowerCase() !== name.toLowerCase());
-    list.unshift({ name, text, t: Date.now() }); DECKS.put(list);
+  all(){
+    let l; try { l = JSON.parse(store.get("rb_decks", "[]")) || []; } catch (e) { l = []; }
+    l.forEach((d, i) => { if (!d.id) d.id = "d" + (d.t || Date.now()) + i; });   // deck lưu ở bản cũ chưa có id
+    return l;
   },
-  del(name){ DECKS.put(DECKS.all().filter(d => d.name !== name)); },
+  put(l){ store.set("rb_decks", JSON.stringify(l)); },
+  get(id){ return DECKS.all().find(d => d.id === id); },
+  save(id, name, text){                                   // id rỗng → deck mới; trả về id
+    const l = DECKS.all(), nid = id || "d" + Date.now();
+    const rest = l.filter(d => d.id !== nid);
+    rest.unshift({ id: nid, name, text, t: Date.now() }); DECKS.put(rest); return nid;
+  },
+  del(id){ DECKS.put(DECKS.all().filter(d => d.id !== id)); },
 };
-const deckCount = text => Object.values(parseDeck(text)).flat().reduce((a, r) => a + r.qty, 0);
-function drawSaved(){
-  const list = DECKS.all(), cur = store.get("rb_deck_name", "");
-  $("savedPanel").innerHTML = list.length
-    ? `<div class="note">Chạm tên để mở · Xóa để bỏ khỏi danh sách</div>` + list.map((d, i) => `
-      <div class="saved"><button class="open ${d.name === cur ? "cur" : ""}" data-open="${i}">${esc(d.name)}<small>${deckCount(d.text)} lá · lưu ${new Date(d.t).toLocaleDateString("vi-VN")}</small></button>
-      <button data-del="${i}">Xóa</button></div>`).join("")
-    : `<div class="note">Chưa có deck nào được lưu. Dán danh sách, đặt tên rồi bấm Lưu deck.</div>`;
-  $("savedPanel").onclick = e => {
-    const o = e.target.closest("[data-open]"), x = e.target.closest("[data-del]");
-    if (o) { const d = list[+o.dataset.open]; loadDeck(d.name, d.text); $("savedPanel").hidden = true; }
-    if (x) { const d = list[+x.dataset.del]; if (confirm(`Xóa deck "${d.name}"?`)) { DECKS.del(d.name); drawSaved(); } }
-  };
-}
-function loadDeck(name, text){
-  $("deckName").value = name; $("deckText").value = text;
-  store.set("rb_deck", text); store.set("rb_deck_name", name); store.set("rb_deck_edit", "0");
-  drawDeck();
-}
+(() => {                                                  // chuyển deck "đang xem" của bản cũ vào danh sách đã lưu
+  const old = store.get("rb_deck", "").trim();
+  if (old && !DECKS.all().some(d => d.text.trim() === old)) DECKS.save("", store.get("rb_deck_name", "") || "Deck của tôi", old);
+  ["rb_deck", "rb_deck_name", "rb_deck_edit"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+})();
+const deckStat = text => {
+  const rows = Object.values(parseDeck(text)).flat();
+  return { total: rows.reduce((a, r) => a + r.qty, 0), banned: rows.filter(r => r.card && banOf(r.card)).length };
+};
 
-/* --- 7b. hiển thị deck: chỉ ảnh thẻ, chạm để xem --- */
-function drawDeck(){
-  const text = $("deckText").value.trim(), name = store.get("rb_deck_name", "");
-  $("deckTitle").textContent = name || "Deck";
-  $("deckEdit").hidden = !!text && store.get("rb_deck_edit", "0") !== "1";
-  if (!text) { $("deckList").innerHTML = `<div class="dnote">Dán danh sách deck theo mẫu (Legend:, Champion:, MainDeck:, Battlefields:, Rune Pool:, Sideboard:) rồi bấm Xem deck. Chạm vào ảnh thẻ để đọc bản dịch, vuốt trái/phải để chuyển thẻ.</div>`; return; }
-  const sec = parseDeck(text), codes = [];
-  const banned = [];
+/* --- 7b. ba màn: list (danh sách) · view (xem thẻ) · edit (tạo/sửa) --- */
+const DK = { mode: "list", id: "" };
+function deckShow(mode, id = ""){                          // vẽ lại toàn bộ tab Deck theo màn
+  DK.mode = mode; DK.id = id;
+  const d = id ? DECKS.get(id) : null;
+  $("dkList").hidden = mode !== "list"; $("dkEdit").hidden = mode !== "edit"; $("dkView").hidden = mode !== "view";
+  $("dkTop").innerHTML =
+    mode === "list" ? `<h1>Deck</h1><button class="orange" data-act="new">+ Deck mới</button>`
+  : mode === "view" ? `<button class="bk" data-act="back">‹</button><h1>${esc(d ? d.name : "")}</h1><button data-act="edit">Sửa</button>`
+  :                   `<button class="bk" data-act="back">‹</button><h1>${d ? "Sửa deck" : "Deck mới"}</h1>`;
+  if (mode === "list") drawDeckList();
+  if (mode === "view") drawDeckView(d);
+  if (mode === "edit") { $("deckName").value = d ? d.name : ""; $("deckText").value = d ? d.text : ""; $("saveMsg").textContent = ""; }
+  $("vDeck").scrollTop = 0;
+}
+function drawDeckList(){
+  const l = DECKS.all();
+  $("dkList").innerHTML = l.length
+    ? `<div class="note">Chạm vào deck để xem thẻ</div>` + l.map(d => { const st = deckStat(d.text); return `
+      <div class="saved"><button class="open" data-open="${d.id}">${esc(d.name)}<small>${st.total} lá · lưu ${new Date(d.t).toLocaleDateString("vi-VN")}${st.banned ? ` · <span class="bn">${st.banned} lá bị cấm</span>` : ""}</small></button>
+      <button data-del="${d.id}">Xóa</button></div>`; }).join("")
+    : `<div class="note">Chưa có deck nào. Bấm "+ Deck mới", dán danh sách deck theo mẫu (Legend:, Champion:, MainDeck:, Battlefields:, Rune Pool:, Sideboard:), đặt tên rồi Lưu deck.</div>`;
+}
+function drawDeckView(d){                                   // chỉ ảnh thẻ, chạm để xem
+  if (!d) { $("dkView").innerHTML = ""; return; }
+  const sec = parseDeck(d.text), codes = [], banned = [];
   const html = SECTIONS.map(([k, label]) => {
     const rows = sec[k]; if (!rows.length) return "";
     const tiles = rows.map(r => {
@@ -529,22 +546,34 @@ function drawDeck(){
     return `<div class="dhead">${label}<small>${rows.reduce((a, r) => a + r.qty, 0)} lá</small></div><div class="grid">${tiles}</div>`;
   }).join("");
   const total = Object.values(sec).flat().reduce((a, r) => a + r.qty, 0);
-  $("deckList").innerHTML = `<div class="dnote">${total} lá${banned.length ? ` · <span class="bn">${banned.length} lá bị cấm: ${banned.map(esc).join(", ")}</span>` : ""}</div>` + html;
-  $("deckList").onclick = e => { const t = e.target.closest(".tile[data-i]"); if (t) openDetail(codes, +t.dataset.i); };
+  $("dkView").innerHTML = `<div class="dnote">${total} lá${banned.length ? ` · <span class="bn">${banned.length} lá bị cấm: ${banned.map(esc).join(", ")}</span>` : ""}</div>` + html;
+  $("dkView").onclick = e => { const t = e.target.closest(".tile[data-i]"); if (t) openDetail(codes, +t.dataset.i); };
 }
 
-/* --- 7c. nút --- */
-$("btnImport").onclick = () => { store.set("rb_deck", $("deckText").value); store.set("rb_deck_name", $("deckName").value.trim()); store.set("rb_deck_edit", "0"); drawDeck(); };
+/* --- 7c. thao tác: mở deck / deck mới đi vào lớp "deck" → nút Back điện thoại quay về danh sách --- */
+function deckOpen(mode, id){ if (DK.mode === "list") openLayer("deck"); deckShow(mode, id); }
+$("dkTop").onclick = e => {
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  if (a.dataset.act === "new") deckOpen("edit", "");
+  if (a.dataset.act === "edit") deckShow("edit", DK.id);          // view → edit: cùng một lớp
+  if (a.dataset.act === "back") history.back();
+};
+$("dkList").onclick = e => {
+  const o = e.target.closest("[data-open]"), x = e.target.closest("[data-del]");
+  if (o) deckOpen("view", o.dataset.open);
+  if (x) { const d = DECKS.get(x.dataset.del); if (d && confirm(`Xóa deck "${d.name}"?`)) { DECKS.del(d.id); drawDeckList(); } }
+};
+$("btnCancel").onclick = () => history.back();
 $("btnSave").onclick = () => {
   const name = $("deckName").value.trim(), text = $("deckText").value.trim();
   if (!text) { $("saveMsg").textContent = "Chưa có danh sách để lưu."; return; }
   if (!name) { $("saveMsg").textContent = "Đặt tên deck trước khi lưu."; $("deckName").focus(); return; }
-  const dup = DECKS.all().some(d => d.name.toLowerCase() === name.toLowerCase());
-  DECKS.save(name, text); $("saveMsg").textContent = dup ? `Đã cập nhật "${name}".` : `Đã lưu "${name}".`;
-  loadDeck(name, text);
+  const same = DECKS.all().find(d => d.name.toLowerCase() === name.toLowerCase() && d.id !== DK.id);
+  if (same && !confirm(`Đã có deck tên "${same.name}". Ghi đè?`)) return;
+  if (same) DECKS.del(same.id);
+  DECKS.save(DK.id, name, text);
+  history.back();                                                  // lưu xong → về danh sách, ẩn thẻ
 };
-$("btnDeckEdit").onclick = () => { const show = $("deckEdit").hidden; store.set("rb_deck_edit", show ? "1" : "0"); $("deckEdit").hidden = !show; $("saveMsg").textContent = ""; $("savedPanel").hidden = true; };
-$("btnSaved").onclick = () => { const p = $("savedPanel"); p.hidden = !p.hidden; if (!p.hidden) drawSaved(); };
 
 /* =========================================================
    8. KEYWORD
@@ -634,7 +663,7 @@ window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferr
    10. KHỞI ĐỘNG
    ========================================================= */
 drawFilters(); drawGrid(); drawKw();
-$("deckText").value = store.get("rb_deck", ""); $("deckName").value = store.get("rb_deck_name", ""); drawDeck();
+deckShow("list");
 if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js");
 setTimeout(trimCache, 3000);
 </script>
