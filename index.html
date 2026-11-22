@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#EAC119">
+<!-- báo cho Chrome/Android: app tự lo màu sáng/tối → không tự "ép tối" làm lệch màu -->
+<meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Riftbound VN">
@@ -38,6 +40,7 @@
   --safeB:env(safe-area-inset-bottom,0px); --safeT:env(safe-area-inset-top,0px);
 }
 /* chế độ tối: đảo nền/chữ, giữ Mustard + Tangerine; nền màu cố định luôn dùng chữ đen */
+html{color-scheme:only light}
 html[data-theme=dark]{--ink:#EAE4DA;--paper:#1C1B19;--paper2:#2A2926;--mute:#A39D92;--cap:#3A3834;color-scheme:dark}
 :root{--cap:#DDD6CA;--black:#1D1D1B}
 .top,.chip.on,button.orange,.kw,.d-M,.d-B,.d-O,.d-N,.sym.en{color:var(--black)}
@@ -192,7 +195,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v5.1 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
+const APP_VER = "v5.2 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));

@@ -5,7 +5,7 @@
      Chrome sẽ tính mỗi ảnh ~7 MB vào bộ nhớ
    - Font Google: lưu lại sau lần đầu
    Khi phát hành bản mới: tăng VER. Khi thêm set dịch: thêm file vào SHELL. */
-const VER = "v5.1";
+const VER = "v5.2";
 const APP = "rb-app-" + VER, IMG = "rb-img", FONT = "rb-font";
 const SHELL = ["./", "index.html", "manifest.webmanifest",
   "data/cards.js", "data/glossary.js", "data/banned.js", "data/vi_05_radiance.js", "data/vi_04_vendetta.js", "data/vi_03_unleashed.js", "data/vi_02_spiritforged.js", "data/vi_01_origins.js",
