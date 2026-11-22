@@ -189,13 +189,14 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 <script src="data/vi_04_vendetta.js"></script>
 <script src="data/vi_03_unleashed.js"></script>
 <script src="data/vi_02_spiritforged.js"></script>
+<script src="data/vi_01_origins.js"></script>
 <!-- thêm set dịch: <script src="data/vi_0X_....js"></script> + thêm vào SHELL trong sw.js -->
 
 <script>
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v4 · Radiance, Vendetta, Unleashed, Spiritforged";
+const APP_VER = "v5 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));

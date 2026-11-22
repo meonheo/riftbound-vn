@@ -94,5 +94,10 @@ window.RB_MACROS = {
   "{WEAPON}":  "[Weaponmaster] (Khi bạn chơi lá này, bạn có thể [Equip] một Equipment của bạn vào lá này với giá giảm [A], kể cả khi Equipment đó đang gắn vào đơn vị khác.)",
   "{UNIQUE}":  "[Unique] (Deck của bạn chỉ được có 1 lá mang tên này.)",
   "{SEAL}":    "[T]: [Reaction] — [Add] [C]. (Kỹ năng tạo tài nguyên không thể bị phản ứng.)",
-  "{GOLD1}":   "chơi một token trang bị Gold ở trạng thái kiệt sức"
+  "{GOLD1}":   "chơi một token trang bị Gold ở trạng thái kiệt sức",
+  /* --- thêm cho Origins --- */
+  "{LEGIONR}": "(Nhận hiệu ứng nếu trong lượt này bạn đã chơi một lá khác.)",
+  "{RECALLR}": "(Đưa nó về căn cứ. Đây không tính là di chuyển.)",
+  "{VISION}":  "[Vision] (Khi bạn chơi lá này, xem lá trên cùng của bộ bài chính. Bạn có thể tái chế nó.)",
+  "{RECRUIT}": "token đơn vị Recruit 1 [S]"
 };
