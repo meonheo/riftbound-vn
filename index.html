@@ -88,7 +88,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 
 /* ---- chi tiết thẻ (lớp phủ toàn màn hình) ---- */
 .detail{position:fixed;inset:0;z-index:10;background:var(--paper);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding-bottom:calc(20px + var(--safeB))}
-#dBody{will-change:transform}
+#dBody{will-change:transform,opacity;backface-visibility:hidden}
 .detail .top button{padding:6px 10px;background:var(--paper)}
 .imgs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px;border-bottom:var(--line)}
 .imgs figure{margin:0;flex:0 0 calc((100% - 10px)/2);min-width:0;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -214,7 +214,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v5.4 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
+const APP_VER = "v5.5 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
@@ -389,30 +389,50 @@ function drawDetail(){
 }
 $("dBack").onclick = () => history.back();
 /* --- chuyển thẻ: nút ‹ › và vuốt (thẻ đi theo ngón tay) --- */
-const SW = { ms: 170 };                                     // thời gian trượt (ms)
-function preloadNear(){                                     // tải sẵn ảnh thẻ trước/sau → không giật khi đổi
-  [DT.i - 1, DT.i + 1].forEach(j => { const c = BY_CODE.get(DT.codes[j]); if (c) variantsOf(c).forEach(v => { new Image().src = img(v); }); });
+/* --- chuyển thẻ: trượt + mờ dần (fade). Chỉ đổi transform/opacity → GPU vẽ,
+       chạy theo tần số quét của màn hình (60/90/120 Hz), không tốn khung hình --- */
+const SW = {
+  out: 160, in: 220,                                         // thời gian trượt ra / trượt vào (ms)
+  easeOut: "cubic-bezier(.4,0,1,1)",                         // ra: tăng tốc dần
+  easeIn: "cubic-bezier(.16,1,.3,1)",                        // vào: hãm mượt (ease-out-expo)
+  busy: false,
+};
+function preloadNear(){                                     // tải + giải mã sẵn ảnh thẻ trước/sau → không giật khi đổi
+  [DT.i - 1, DT.i + 1].forEach(j => { const c = BY_CODE.get(DT.codes[j]); if (c) variantsOf(c).forEach(v => { const im = new Image(); im.src = img(v); im.decode && im.decode().catch(() => {}); }); });
 }
-function slide(x, ms){ const b = $("dBody"); b.style.transition = ms ? `transform ${ms}ms ease-out` : "none"; b.style.transform = x ? `translateX(${x}px)` : ""; }
+function slide(x, ms, op = 1, ease = SW.easeIn){            // x: lệch ngang (px) · op: độ trong (0–1)
+  const b = $("dBody");
+  b.style.transition = ms ? `transform ${ms}ms ${ease}, opacity ${ms}ms ${ease}` : "none";
+  b.style.transform = x ? `translate3d(${x}px,0,0)` : "";
+  b.style.opacity = op < 1 ? op : "";
+}
+const fadeOf = dx => Math.max(0.25, 1 - Math.abs(dx) / ($("detail").clientWidth * 0.9));   // kéo càng xa càng mờ
+function waitImg(ms){                                        // đợi ảnh thẻ mới giải mã xong (tối đa ms) rồi mới trượt vào
+  const im = $("dBody").querySelector(".imgs img");
+  if (!im || !im.decode) return Promise.resolve();
+  return Promise.race([im.decode().catch(() => {}), new Promise(r => setTimeout(r, ms))]);
+}
 function goCard(step){                                      // step = -1 thẻ trước, +1 thẻ sau
-  const j = DT.i + step; if (j < 0 || j >= DT.codes.length) { slide(0, SW.ms); return; }
-  if (SW.busy) return; SW.busy = true; setTimeout(() => SW.busy = false, SW.ms * 2 + 40);   // chặn bấm/vuốt dồn dập
+  const j = DT.i + step; if (j < 0 || j >= DT.codes.length) { slide(0, SW.in); return; }
+  if (SW.busy) return; SW.busy = true;
   const w = $("detail").clientWidth;
-  slide(-step * w, SW.ms);                                   // 1. trượt thẻ cũ ra khỏi màn
-  setTimeout(() => {
-    DT.i = j; drawDetail();                                  // 2. vẽ thẻ mới ở phía đối diện
-    slide(step * w * 0.35, 0);
-    requestAnimationFrame(() => requestAnimationFrame(() => slide(0, SW.ms)));   // 3. trượt vào giữa
+  slide(-step * w * 0.6, SW.out, 0, SW.easeOut);             // 1. thẻ cũ trượt ra + mờ dần
+  setTimeout(async () => {
+    DT.i = j; drawDetail();                                  // 2. vẽ thẻ mới (đang trong suốt) ở phía đối diện
+    slide(step * w * 0.3, 0, 0);
+    await waitImg(120);
+    requestAnimationFrame(() => requestAnimationFrame(() => slide(0, SW.in, 1)));   // 3. trượt vào + hiện dần
+    setTimeout(() => SW.busy = false, SW.in);
     preloadNear();
-  }, SW.ms);
+  }, SW.out);
 }
 $("dPrev").onclick = () => goCard(-1);
 $("dNext").onclick = () => goCard(1);
 (() => {
   const el = $("detail");
-  let sx = 0, sy = 0, st = 0, dx = 0, mode = "";               // mode: "" chưa rõ · "x" vuốt ngang · "y" cuộn dọc · "skip"
+  let sx = 0, sy = 0, st = 0, dx = 0, mode = "", raf = 0;      // mode: "" chưa rõ · "x" vuốt ngang · "y" cuộn dọc · "skip"
   el.addEventListener("touchstart", e => {
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; mode = "";
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; mode = SW.busy ? "skip" : "";
     const strip = e.target.closest(".imgs");
     if (e.touches.length !== 1 || (strip && strip.scrollWidth > strip.clientWidth + 4)) mode = "skip";
   }, { passive: true });
@@ -421,16 +441,17 @@ $("dNext").onclick = () => goCard(1);
     const t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
     if (!mode) { if (Math.abs(mx) < 10 && Math.abs(my) < 10) return; mode = Math.abs(mx) > Math.abs(my) ? "x" : "y"; if (mode === "y") return; }
     const edge = (mx > 0 && DT.i === 0) || (mx < 0 && DT.i === DT.codes.length - 1);
-    dx = edge ? mx * 0.25 : mx;                                // hết thẻ → kéo nặng tay
-    slide(dx, 0);
+    dx = edge ? mx * 0.25 : mx;                                // hết thẻ → kéo nặng tay, không mờ
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; slide(dx, 0, edge ? 1 : fadeOf(dx)); });   // gộp theo từng khung hình
   }, { passive: true });
   const end = () => {
     if (mode !== "x") return; mode = "";
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
     const fast = Math.abs(dx) > 30 && Date.now() - st < 250;
-    if (Math.abs(dx) > 70 || fast) goCard(dx < 0 ? 1 : -1); else slide(0, SW.ms);
+    if (Math.abs(dx) > 70 || fast) goCard(dx < 0 ? 1 : -1); else slide(0, SW.in, 1);
   };
   el.addEventListener("touchend", end, { passive: true });
-  el.addEventListener("touchcancel", () => { if (mode === "x") slide(0, SW.ms); mode = ""; }, { passive: true });
+  el.addEventListener("touchcancel", () => { if (mode === "x") slide(0, SW.in, 1); mode = ""; }, { passive: true });
 })();
 $("dBody").onclick = e => {
   const f = e.target.closest("figure"); if (!f) return;
