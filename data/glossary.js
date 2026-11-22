@@ -67,5 +67,24 @@ window.RB_MACROS = {
   "{AMBUSH}":  "[Ambush] (Bạn có thể chơi lá này như một [Reaction] lên một chiến trường nơi bạn có đơn vị.)",
   "{DEFLECT2}":"[Deflect 2] (Đối thủ phải trả [A][A] để chọn lá này bằng phép hoặc kỹ năng.)",
   "{CLONE}":   "(Token này có: \"Khi lá này tấn công, bạn có thể trục xuất một đơn vị từ mộ bài của bạn. Nếu làm vậy, cho lá này [Assault 4] trong lượt này.\")",
-  "{EQUIPR}":  "Gắn lá này vào một đơn vị bạn kiểm soát."
+  "{EQUIPR}":  "Gắn lá này vào một đơn vị bạn kiểm soát.",
+  /* --- thêm cho Unleashed --- */
+  "{HUNT}":    "[Hunt] (Khi lá này chinh phục hoặc giữ chiến trường, bạn nhận 1 XP.)",
+  "{HUNT2}":   "[Hunt 2] (Khi lá này chinh phục hoặc giữ chiến trường, bạn nhận 2 XP.)",
+  "{HUNT3}":   "[Hunt 3] (Khi lá này chinh phục hoặc giữ chiến trường, bạn nhận 3 XP.)",
+  "{LV3R}":    "(Khi bạn có từ 3 XP trở lên, nhận hiệu ứng.)",
+  "{LV6R}":    "(Khi bạn có từ 6 XP trở lên, nhận hiệu ứng.)",
+  "{LV11R}":   "(Khi bạn có từ 11 XP trở lên, nhận hiệu ứng.)",
+  "{TEMPME}":  "[Temporary] (Tiêu diệt lá này vào đầu giai đoạn Khởi đầu của người kiểm soát, trước khi tính điểm.)",
+  "{TEMPIT}":  "(Tiêu diệt nó vào đầu giai đoạn Khởi đầu tiếp theo của người kiểm soát, trước khi tính điểm.)",
+  "{REPEATR}": "(Bạn có thể trả chi phí bổ sung để lặp lại hiệu ứng của phép này.)",
+  "{BACKLINE}":"[Backline] (Lá này phải được phân bổ sát thương giao tranh sau cùng.)",
+  "{SHIELD}":  "[Shield] (+1 [S] khi lá này đang phòng thủ.)",
+  "{SHIELD2}": "[Shield 2] (+2 [S] khi lá này đang phòng thủ.)",
+  "{ASSAULT}": "[Assault] (+1 [S] khi lá này đang tấn công.)",
+  "{ASSAULT2}":"[Assault 2] (+2 [S] khi lá này đang tấn công.)",
+  "{BIRD}":    "token đơn vị Bird 1 [S] có [Deflect]",
+  "{BIRDR}":   "(Đối thủ phải trả [A] để chọn đơn vị có [Deflect] bằng phép hoặc kỹ năng.)",
+  "{SPRITE}":  "token đơn vị Sprite 3 [S] có [Temporary]",
+  "{ADDR}":    "(Kỹ năng tạo tài nguyên không thể bị phản ứng.)"
 };

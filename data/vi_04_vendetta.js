@@ -191,16 +191,14 @@ Object.assign(window.RB_VI, {
 "Shadow Temple": "Khi bạn giữ chiến trường này, [Burn 3]. (Đưa 3 lá trên cùng của bộ bài chính vào mộ bài.)",
 "Threshold of the Gray": "Khi giao tranh bắt đầu tại đây, người tấn công và người phòng thủ mỗi bên [Add] [1].",
 
-/* ---------- SHOWCASE IN LẠI (167–188, SP1–SP6) ---------- */
+/* ---------- SHOWCASE IN LẠI (167–188, SP1–SP6) ----------
+   Rengar Trophy Hunter, Kha'Zix Evolving Hunter, Diana No Longer Human: xem vi_03_unleashed.js */
 "Vi, Destructive": "{GANK}\nTái chế 1 lá từ mộ bài của bạn: Cho lá này +1 [S] trong lượt này.",
 "Jinx, Demolitionist": "{ACCEL}\n[Assault 2] (+2 [S] khi lá này đang tấn công.)\nKhi bạn chơi lá này, bỏ 2 lá.",
 "Draven, Showboat": "Might của lá này được cộng thêm bằng số điểm của bạn.",
 "Irelia, Fervent": "{DEFLECT}\nKhi bạn chọn hoặc làm sẵn sàng lá này, cho lá này +1 [S] trong lượt này.",
 "Jayce, Man of Progress": "Khi bạn chơi lá này, bạn có thể tiêu diệt một trang bị phe ta. Nếu làm vậy, trong lượt này bạn có thể chơi từ tay một trang bị có chi phí Energy không quá [7] mà không cần trả chi phí Energy.",
 "Viktor, Innovator": "Khi bạn chơi một lá trong lượt của đối thủ, chơi một token đơn vị Recruit 1 [S] vào căn cứ của bạn.",
-"Rengar, Trophy Hunter": "{AMBUSH}\nLá này có thể được chơi lên một chiến trường đang có đơn vị địch.",
-"Kha'Zix, Evolving Hunter": "[Hunt]\nKhi lá này tấn công, bạn có thể tiêu 3 XP để gây sát thương bằng Might của lá này lên một đơn vị địch tại đây.",
-"Diana, No Longer Human": "{AMBUSH}\nKhi bạn chơi một phép, cho lá này +2 [S] trong lượt này.",
 "Leona, Determined": "[Shield] (+1 [S] khi lá này đang phòng thủ.)\nKhi lá này tấn công, [Stun] một đơn vị địch tại đây. {STUNR}",
 "Kai'Sa, Survivor": "{ACCEL}\nKhi lá này chinh phục, rút 1 lá.",
 "Sona, Harmonious": "Vào cuối lượt của bạn, nếu lá này đang ở một chiến trường, làm sẵn sàng tối đa 4 rune phe ta.",

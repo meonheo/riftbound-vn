@@ -181,13 +181,14 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 <script src="data/glossary.js"></script>
 <script src="data/vi_05_radiance.js"></script>
 <script src="data/vi_04_vendetta.js"></script>
+<script src="data/vi_03_unleashed.js"></script>
 <!-- thêm set dịch: <script src="data/vi_0X_....js"></script> + thêm vào SHELL trong sw.js -->
 
 <script>
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v2 · Radiance, Vendetta";
+const APP_VER = "v3 · Radiance, Vendetta, Unleashed";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
