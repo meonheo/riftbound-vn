@@ -73,7 +73,10 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 .d-B{background:var(--tang)}.d-X{background:var(--lav);color:#fff}.d-O{background:var(--mustard)}.d-N{background:#cfc8bb}
 
 /* ---- thư viện ---- */
-.fpanel{border-bottom:var(--line);padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.fpanel{position:fixed;left:0;right:0;z-index:5;border-bottom:var(--line);padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--paper);max-height:70vh;overflow-y:auto;box-shadow:0 8px 18px rgba(0,0,0,.18);animation:fdrop .16s ease-out}
+.fpanel[hidden]{display:none}
+@keyframes fdrop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+.fshade{position:fixed;inset:0;z-index:2;background:rgba(29,29,27,.25)}
 .fpanel .row{display:flex;flex-wrap:wrap;gap:6px}
 .fpanel select{flex:1}
 .sub{display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;color:var(--mute)}
@@ -157,6 +160,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
       <div class="row" id="fBan"></div>
       <div class="row"><select id="fType"></select><select id="fVar"><option value="base">Thẻ gốc</option><option value="var">Biến thể</option><option value="all">Tất cả</option></select></div>
     </div>
+    <div class="fshade" id="fshade" hidden></div>
     <div class="sub"><span id="fsum"></span><span id="cnt"></span></div>
     <div class="grid" id="grid"></div>
     <div id="sentinel" style="height:40px"></div>
@@ -216,7 +220,7 @@ select,input[type=search],textarea{border:var(--line);background:var(--paper2);p
 /* =========================================================
    2. DATA — thẻ, chỉ mục tên, link ảnh
    ========================================================= */
-const APP_VER = "v5.6 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
+const APP_VER = "v5.7 · đủ 5 set: Radiance, Vendetta, Unleashed, Spiritforged, Origins";
 const F = window.RB_FIELDS, CDN = window.RB_CDN;
 const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
 const BY_CODE = new Map(CARDS.map(c => [c.code, c]));
@@ -290,6 +294,8 @@ window.addEventListener("popstate", () => {
   if (top === "deck") deckShow("list");
 });
 document.querySelectorAll(".nav button").forEach(b => b.onclick = () => {
+  filterOpen(false);
+  if (b.classList.contains("on")) { $(b.dataset.v).scrollTo({ top: 0, behavior: "smooth" }); return; }   // bấm lại tab đang mở → lên đầu trang
   document.querySelectorAll(".nav button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.v));
   if (b.dataset.v === "vSet") drawSettings();
@@ -342,7 +348,14 @@ function moreGrid(){
 }
 new IntersectionObserver(es => { if (es[0].isIntersecting) moreGrid(); }, { root: $("vLib"), rootMargin: "600px" }).observe($("sentinel"));
 $("grid").onclick = e => { const t = e.target.closest(".tile"); if (t) openDetail(ST.list.map(c => c.code), +t.dataset.i); };
-$("btnF").onclick = () => { $("fpanel").hidden = !$("fpanel").hidden; $("btnF").classList.toggle("orange", !$("fpanel").hidden); };
+/* bộ lọc: bấm Lọc để xổ ra / thu về; chạm ra ngoài menu cũng thu về */
+function filterOpen(open){
+  if (open) $("fpanel").style.top = $("vLib").querySelector(".top").getBoundingClientRect().bottom + "px";   // ngay dưới thanh trên
+  $("fpanel").hidden = !open; $("fshade").hidden = !open; $("btnF").classList.toggle("orange", open);
+}
+$("btnF").onclick = () => filterOpen($("fpanel").hidden);
+$("fshade").onclick = () => filterOpen(false);
+$("q").addEventListener("focus", () => filterOpen(false));
 $("fpanel").onclick = e => {
   const t = e.target.closest("[data-set],[data-dom],[data-ban]"); if (!t) return;
   if (t.dataset.ban) ST.ban = !ST.ban;
