@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Riftbound — Sổ tay thẻ bài (bản web)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- =========================================================
+     1. STYLE
+     Bảng màu: Seashell / Muted Black / Mustard / Tangerine
+     ========================================================= -->
+<style>
+:root{
+  --ink:#1D1D1B; --paper:#EAE4DA; --paper2:#F3EEE6; --mustard:#EAC119; --tang:#ED773C;
+  --lav:#808BC5; --tea:#245E55; --pink:#EAA7C7; --sky:#9ED6DF; --red:#C63F3E;
+  --line:1.5px solid var(--ink);
+  --mono:"Cascadia Mono","Cascadia Code","IBM Plex Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--mono);color:var(--ink);background:var(--paper);font-size:13px}
+button,select,input,textarea{font-family:inherit;font-size:13px;color:var(--ink)}
+button{background:var(--paper);border:var(--line);padding:6px 12px;cursor:pointer;border-radius:0}
+button:hover{background:var(--paper2)}
+button.dark{background:var(--ink);color:var(--paper)}
+button.orange{background:var(--tang)}
+select,input[type=text]{border:var(--line);background:var(--paper2);padding:5px 8px;border-radius:0}
+
+/* ---- khung app ---- */
+.app{display:grid;grid-template-columns:84px minmax(0,1fr);grid-template-rows:56px minmax(0,1fr) 60px;height:100vh}
+.side{grid-row:1/4;border-right:var(--line);display:flex;flex-direction:column;align-items:center;padding-top:70px;gap:22px}
+.nav{background:none;border:none;text-align:center;font-size:11px;padding:4px;width:76px}
+.nav svg{display:block;margin:0 auto 4px}
+.nav.on{color:var(--tang)}
+.top{background:var(--mustard);border-bottom:var(--line);display:flex;align-items:center;gap:10px;padding:0 14px}
+.top input{flex:1;max-width:520px;background:var(--paper)}
+.chip{border:var(--line);padding:3px 9px;font-size:12px;background:var(--paper);cursor:pointer;user-select:none;display:inline-block}
+.chip.on{background:var(--tang)}
+.main{overflow:hidden;position:relative}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:grid}
+.bar{grid-column:2;background:var(--tang);border-top:var(--line);display:flex;align-items:center;gap:14px;padding:0 14px}
+.bar .mini{width:30px;aspect-ratio:63/88;border:var(--line);background:var(--paper) center/cover}
+.bar .grow{flex:1;min-width:0}
+.bar b{font-weight:600}
+
+/* ---- thư viện ---- */
+#vLib{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.libLeft{display:flex;flex-direction:column;min-height:0;border-right:var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:var(--line);align-items:center}
+.grid{overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;align-content:start}
+.tile{cursor:pointer;font-size:11px}
+.tile .im{aspect-ratio:63/88;border:var(--line);background:var(--paper2) center/cover no-repeat}
+.tile.land .im{background-size:contain}
+.tile.sel .im{outline:3px solid var(--tang);outline-offset:1px}
+.tile .nm{margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .cd{color:#6b665d}
+.more{grid-column:1/-1;justify-self:center}
+.count{font-size:11px;color:#6b665d;margin-left:auto}
+
+/* ---- trang sách (chi tiết thẻ) ---- */
+/* trên: ảnh thẻ (mọi biến thể cạnh nhau) — dưới: bản dịch, cuộn riêng */
+.book{overflow:hidden;padding:16px}
+.spread{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,58fr) minmax(0,42fr);border:var(--line);height:100%}
+.page{padding:18px;min-width:0}
+.page.l{border-bottom:var(--line);display:flex;min-height:0;padding:14px;overflow:hidden}
+.cards{flex:1;min-width:0;min-height:0;display:flex;justify-content:flex-start;align-items:flex-start;gap:14px}
+.cards figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+.cards img{display:block}
+.cards.multi figure.on img{outline:3px solid var(--tang);outline-offset:2px}
+.cards figcaption{font-size:11px;white-space:nowrap;background:#DDD6CA;padding:3px 10px}
+.page.r{overflow:auto;min-height:0}
+.page.r h2{font-size:18px;margin:0 0 8px;font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tag{border:var(--line);padding:2px 8px;font-size:11px;background:var(--paper)}
+.sec{border-top:var(--line);padding-top:10px;margin-top:12px}
+.sec h3{font-size:12px;margin:0 0 8px;font-weight:600;letter-spacing:.04em}
+.txt{line-height:1.75;font-size:13.5px}
+.kw{background:var(--pink);border:1px solid var(--ink);padding:0 4px;white-space:nowrap}
+.sym{display:inline-block;border:1px solid var(--ink);padding:0 4px;font-size:11px;line-height:16px;vertical-align:1px;background:var(--paper2)}
+.sym.en{border-radius:50%;min-width:18px;text-align:center;padding:0;background:#fff}
+.sym.ex{background:var(--ink);color:var(--paper)}
+.kwrow{margin:0 0 8px;line-height:1.6}
+.empty{color:#6b665d;font-style:italic}
+.d-F{background:var(--red);color:#fff}.d-C{background:var(--tea);color:#fff}.d-M{background:var(--sky)}
+.d-B{background:var(--tang)}.d-X{background:var(--lav);color:#fff}.d-O{background:var(--mustard)}.d-N{background:#cfc8bb}
+
+/* ---- build deck ---- */
+#vDeck{grid-template-columns:minmax(300px,.8fr) minmax(0,1.6fr)}
+.deckL{border-right:var(--line);display:flex;flex-direction:column;padding:12px;gap:10px;min-height:0}
+.deckL textarea{flex:1;min-height:200px;border:var(--line);background:var(--paper2);padding:10px;resize:none;line-height:1.5}
+.deckR{overflow:auto;padding:12px}
+.dsec h3{font-size:12px;margin:14px 0 8px;font-weight:600;border-bottom:var(--line);padding-bottom:4px}
+.drow{display:grid;grid-template-columns:30px 46px minmax(0,1fr) 210px;gap:10px;align-items:center;padding:4px 0}
+.drow .th{width:46px;aspect-ratio:63/88;border:var(--line);background:center/cover}
+.drow select{width:100%}
+.drow.err{color:var(--red)}
+.opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.note{font-size:11px;color:#6b665d;line-height:1.5}
+.dkHead{display:flex;align-items:center;gap:8px}.dkHead b{flex:1;font-size:14px}
+.dkList{overflow:auto;display:flex;flex-direction:column;gap:6px;min-height:0}
+.saved{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.saved .open{text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 12px}
+.saved .open small{color:#6b665d;font-size:11px}
+.saved .open.cur{background:var(--tang)}.saved .open.cur small{color:var(--ink)}
+.deckL input[type=text]{border:var(--line);background:var(--paper2);padding:8px 10px}
+.dkEmpty{padding:40px 10px;text-align:center}
+
+/* ---- keyword ---- */
+#vKw{overflow:auto;padding:18px;display:none;align-content:start}
+#vKw.on{display:block}
+.kwlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.kwcard{border:var(--line);padding:12px;background:var(--paper2)}
+
+/* =========================================================
+   2. IN A4 — 63×88 mm, khe 3 mm, 3×3 thẻ/trang, vạch cắt
+   ========================================================= */
+#printArea{display:none}
+.preview{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.preview .sheet{zoom:.42;box-shadow:0 0 0 3px var(--ink)}
+.sheet{width:210mm;height:297mm;position:relative;background:#fff;overflow:hidden}
+.pcard{position:absolute;width:63mm;height:88mm;overflow:hidden}
+.pcard.hair{outline:.1mm solid #9a9a9a}
+.pcard img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard.land img{position:absolute;width:88mm;height:63mm;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);object-fit:cover}
+.cm{position:absolute;background:#555}
+@media print{
+  @page{size:A4 portrait;margin:0}
+  body{background:#fff}
+  .app{display:none}
+  #printArea{display:block}
+  .sheet{page-break-after:always;break-after:page}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ---- menu trái ---- -->
+  <nav class="side">
+    <button class="nav on" data-v="vLib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="7" height="10"/><rect x="14" y="4" width="7" height="10"/><path d="M3 18h18M3 21h18"/></svg>Thư viện</button>
+    <button class="nav" data-v="vDeck"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="3" width="12" height="16"/><path d="M3 7v14h13"/></svg>Build deck</button>
+    <button class="nav" data-v="vKw"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Keyword</button>
+  </nav>
+  <!-- ---- thanh trên ---- -->
+  <header class="top">
+    <input type="text" id="q" placeholder="Tìm tên thẻ, mã thẻ, keyword hoặc chữ trong bản dịch">
+    <div id="setChips"></div>
+  </header>
+  <!-- ---- nội dung ---- -->
+  <main class="main">
+    <section class="view on" id="vLib">
+      <div class="libLeft">
+        <div class="filters" id="filters"></div>
+        <div class="grid" id="grid"></div>
+      </div>
+      <div class="book"><div class="spread" id="spread"></div></div>
+    </section>
+    <section class="view" id="vDeck">
+      <!-- cột trái: danh sách deck đã lưu  ↔  form tạo/sửa -->
+      <div class="deckL">
+        <div id="dkListBox" style="display:contents">
+          <div class="dkHead"><b>Deck đã lưu</b><button class="orange" id="btnNew">+ Deck mới</button></div>
+          <div class="note">Bấm vào deck để xem thẻ, chọn art và in. Deck lưu trong trình duyệt này. Bản điện thoại: <a href="../" target="_blank">mở tại đây</a>.</div>
+          <div class="dkList" id="dkList"></div>
+        </div>
+        <div id="dkEditBox" style="display:none;flex-direction:column;gap:10px;flex:1;min-height:0">
+          <div class="dkHead"><b id="dkEditTitle">Deck mới</b></div>
+          <input type="text" id="deckName" placeholder="Tên deck (vd. Rengar Fury)" autocomplete="off">
+          <textarea id="deckText" spellcheck="false" placeholder="Legend:&#10;1 Rengar, Pridestalker&#10;&#10;Champion:&#10;1 Rengar, Trophy Hunter&#10;&#10;MainDeck:&#10;3 Grim Apothecary&#10;..."></textarea>
+          <div class="opts"><button id="btnCancel">Hủy</button><button class="orange" id="btnSave">Lưu deck</button><span class="note" id="saveMsg"></span></div>
+        </div>
+      </div>
+      <!-- cột phải: thẻ của deck đang mở + in -->
+      <div class="deckR">
+        <div id="dkEmpty" class="note dkEmpty">Chưa mở deck nào. Chọn một deck bên trái, hoặc bấm "+ Deck mới".</div>
+        <div id="dkView" style="display:none">
+          <div class="opts"><b id="deckSum"></b><button id="btnEdit">Sửa</button><button id="btnClose">Đóng</button><button class="orange" id="btnPrint2">Xuất A4 / In</button></div>
+          <div class="opts" style="margin-top:8px">
+            <label><input type="checkbox" id="optSide"> In sideboard</label>
+            <label><input type="checkbox" id="optHair" checked> Viền cắt mảnh</label>
+            <span class="note">Khi in: khổ A4, tỷ lệ 100% (Actual size), lề None, không chọn "Fit to page".</span>
+          </div>
+          <div id="deckList"></div>
+          <div class="dsec"><h3>Xem trước trang in</h3></div>
+          <div class="preview" id="preview"></div>
+        </div>
+      </div>
+    </section>
+    <section class="view" id="vKw">
+      <div class="kwlist" id="kwList"></div>
+    </section>
+  </main>
+  <!-- ---- thanh dưới: khay deck ---- -->
+  <footer class="bar">
+    <div class="mini" id="barMini"></div>
+    <div class="grow"><b id="barName">Chưa có deck</b><div id="barInfo" style="font-size:11px">Vào Build deck để dán danh sách</div></div>
+    <label class="chip" style="background:var(--paper)"><input type="checkbox" id="barSide" style="margin:0 4px 0 0;vertical-align:-1px">In sideboard</label>
+    <button class="dark" id="btnPrint">Xuất A4</button>
+  </footer>
+</div>
+<div id="printArea"></div>
+
+<!-- dữ liệu -->
+<script src="data/cards.js"></script>
+<script src="../data/glossary.js"></script>
+<script src="../data/vi_05_radiance.js"></script>
+<script src="../data/vi_04_vendetta.js"></script>
+<script src="../data/vi_03_unleashed.js"></script>
+<script src="../data/vi_02_spiritforged.js"></script>
+<script src="../data/vi_01_origins.js"></script>
+<!-- bản dịch dùng chung theo tên thẻ: thẻ in lại ở set khác tự có bản dịch -->
+
+<script>
+/* =========================================================
+   3. DATA — dựng object thẻ + chỉ mục tên
+   ========================================================= */
+const F = window.RB_FIELDS;
+const CARDS = window.RB_CARDS.map(a => Object.fromEntries(F.map((k, i) => [k, a[i]])));
+const VI = window.RB_VI || {}, GLO = window.RB_GLOSSARY, MAC = window.RB_MACROS;
+const SETS = [["OGN","Origins"],["SFD","Spiritforged"],["UNL","Unleashed"],["VEN","Vendetta"],["RAD","Radiance"]];
+const SET_RANK = {OGN:1,OGS:1,SFD:2,UNL:3,VEN:4,RAD:5};
+const DOM = {F:"Fury",C:"Calm",M:"Mind",B:"Body",X:"Chaos",O:"Order",N:"Colorless"};
+const TYPES = ["Unit","Spell","Gear","Legend","Battlefield","Rune","Token"];
+const norm = s => (s||"").toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
+const setKey = c => c.set === "OGS" ? "OGN" : c.set;
+const isTranslated = c => VI[c.name] !== undefined || c.type === "Rune";
+
+/* chỉ mục: tên chuẩn → danh sách thẻ (mọi biến thể) */
+const BY_NAME = new Map();
+const addIdx = (k, c) => { k = norm(k); if (!BY_NAME.has(k)) BY_NAME.set(k, []); if (!BY_NAME.get(k).includes(c)) BY_NAME.get(k).push(c); };
+const CHAMPS = new Set(CARDS.filter(c => c.champ).map(c => norm(c.champ)));
+CARDS.forEach(c => {
+  addIdx(c.name, c);
+  if (c.champ) {                                   // "Rengar, Pridestalker" / "Annie, Dark Child"
+    addIdx(c.champ + ", " + c.name, c);
+    addIdx(c.champ + ", " + c.name.replace(/, Starter$/, ""), c);
+  }
+  const m = c.name.match(/^(.+), ([^,]+)$/);       // "Icathian Rain, Kai'Sa" → "Icathian Rain"
+  if (m && c.type !== "Unit" && CHAMPS.has(norm(m[2]))) addIdx(m[1], c);
+});
+const pickDefault = list => [...list].sort((a, b) => (b.base - a.base) || (SET_RANK[a.set] - SET_RANK[b.set]) || a.code.localeCompare(b.code))[0];
+
+/* =========================================================
+   4. RENDER CHỮ — macro, ký hiệu, keyword
+   ========================================================= */
+const esc = s => s.replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+function expand(t){ let s = t; for (let i = 0; i < 3; i++) for (const k in MAC) s = s.split(k).join(MAC[k]); return s; }
+function renderText(raw, dom){
+  return esc(expand(raw)).replace(/\[([^\]]+)\]/g, (m, t) => {
+    if (/^\d+$/.test(t)) return `<span class="sym en" title="Energy">${t}</span>`;
+    if (t === "A") return `<span class="sym" title="1 Power bất kỳ domain">Power</span>`;
+    if (t === "C") return `<span class="sym ${dom ? "d-" + dom[0] : ""}" title="1 Power cùng domain với lá bài">Power ◆</span>`;
+    if (t === "T") return `<span class="sym ex" title="Làm kiệt sức lá này">⟳</span>`;
+    if (t === "S" || t === "M") return `<span class="sym" title="Might">Might</span>`;
+    if (t === "&gt;") return " — ";
+    return `<span class="kw">${t}</span>`;
+  }).replace(/\n/g, "<br>");
+}
+function keywordsOf(raw){
+  const out = [];
+  (expand(raw).match(/\[([^\]]+)\]/g) || []).forEach(m => {
+    const k = m.slice(1, -1).replace(/\s+\d+$/, "");
+    if (GLO[k] && !out.includes(k)) out.push(k);
+  });
+  return out;
+}
+
+/* =========================================================
+   5. THƯ VIỆN — bộ lọc, lưới, trang chi tiết
+   ========================================================= */
+const ST = { sets: new Set(["RAD"]), dom: "", type: "", variant: "base", q: "", shown: 60, sel: null };
+const $ = id => document.getElementById(id);
+
+function buildChips(){
+  $("setChips").innerHTML = SETS.map(([k, n]) => `<span class="chip ${ST.sets.has(k) ? "on" : ""}" data-set="${k}">${n}</span>`).join(" ");
+  $("filters").innerHTML =
+    `<span class="chip ${!ST.dom ? "on" : ""}" data-dom="">Mọi domain</span>` +
+    Object.entries(DOM).map(([k, n]) => `<span class="chip ${ST.dom === k ? "on" : ""}" data-dom="${k}">${n}</span>`).join("") +
+    `<select id="fType"><option value="">Mọi loại</option>${TYPES.map(t => `<option ${ST.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>` +
+    `<select id="fVar"><option value="base" ${ST.variant === "base" ? "selected" : ""}>Thẻ gốc</option><option value="var" ${ST.variant === "var" ? "selected" : ""}>Biến thể</option><option value="all" ${ST.variant === "all" ? "selected" : ""}>Tất cả</option></select>` +
+    `<span class="count" id="cnt"></span>`;
+  $("fType").onchange = e => { ST.type = e.target.value; ST.shown = 60; drawGrid(); };
+  $("fVar").onchange = e => { ST.variant = e.target.value; ST.shown = 60; drawGrid(); };
+}
+function filtered(){
+  const q = norm(ST.q);
+  return CARDS.filter(c => {
+    if (ST.sets.size && !ST.sets.has(setKey(c))) return false;
+    if (ST.variant === "base" && !c.base) return false;
+    if (ST.variant === "var" && c.base) return false;
+    if (ST.type && c.type !== ST.type) return false;
+    if (ST.dom && !(c.dom || "").includes(ST.dom)) return false;
+    if (q) {
+      const hay = norm(c.name + " " + c.code + " " + (c.champ || "") + " " + (VI[c.name] ? expand(VI[c.name]) : ""));
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function drawGrid(){
+  const list = filtered();
+  $("cnt").textContent = list.length + " thẻ";
+  $("grid").innerHTML = list.slice(0, ST.shown).map(c =>
+    `<div class="tile ${c.landscape ? "land" : ""} ${ST.sel === c.code ? "sel" : ""}" data-code="${c.code}">
+       <div class="im" style="background-image:url('${c.img}')"></div>
+       <div class="nm">${esc(c.name)}</div><div class="cd">${c.code.toUpperCase()}</div></div>`).join("") +
+    (list.length > ST.shown ? `<button class="more" id="more">Xem thêm (${list.length - ST.shown})</button>` : "");
+  const mb = $("more"); if (mb) mb.onclick = () => { ST.shown += 60; drawGrid(); };
+  if (!ST.sel && list[0]) showCard(list[0].code);
+}
+function showCard(code){
+  const c = CARDS.find(x => x.code === code); if (!c) return;
+  ST.sel = code;
+  document.querySelectorAll(".tile").forEach(t => t.classList.toggle("sel", t.dataset.code === code));
+  const vars = [...(BY_NAME.get(norm(c.name)) || [c])].sort((a, b) => (b.base - a.base) || (SET_RANK[a.set] - SET_RANK[b.set]) || a.code.localeCompare(b.code));
+  const raw = VI[c.name];
+  const stats = [c.e !== "" ? `Energy ${c.e}` : "", c.p !== "" ? `Power ${c.p}` : "", c.m !== "" ? `Might ${c.m}` : ""].filter(Boolean);
+  const doms = (c.dom || "").split("").map(d => `<span class="tag d-${d}">${DOM[d]}</span>`).join("");
+  let body;
+  if (c.type === "Rune") body = `<div class="empty">Rune không có nội dung chữ — dùng để tạo Power cho domain ${DOM[c.dom] || ""}.</div>`;
+  else if (raw === undefined) body = `<div class="empty">Set ${c.setName} chưa được dịch.</div>`;
+  else body = `<div class="txt">${renderText(raw, c.dom)}</div>`;
+  const kws = raw ? keywordsOf(raw) : [];
+  $("spread").innerHTML = `
+    <div class="page l">
+      <div class="cards ${vars.length > 1 ? "multi" : ""}" id="cardRow">${vars.map(v => `
+        <figure class="${v.code === c.code ? "on" : ""}" data-code="${v.code}" data-land="${v.landscape ? 1 : 0}">
+          <img src="${v.img}" alt="${esc(v.name)}"><figcaption>${v.code.toUpperCase()} · ${esc(v.variant)} · ${esc(v.rarity)}</figcaption>
+        </figure>`).join("")}</div>
+    </div>
+    <div class="page r">
+      <h2>${esc(c.name)}</h2>
+      <div class="meta"><span class="tag">${c.setName}</span><span class="tag">${c.type}${c.champ ? " · " + esc(c.champ) : ""}</span>${doms}${stats.map(s => `<span class="tag">${s}</span>`).join("")}</div>
+      <div class="sec"><h3>NỘI DUNG THẺ</h3>${body}</div>
+      ${kws.length ? `<div class="sec"><h3>KEYWORD</h3>${kws.map(k => `<div class="kwrow"><span class="kw">${k}</span> — ${esc(GLO[k])}</div>`).join("")}</div>` : ""}
+    </div>`;
+  fitCards();
+}
+/* co ảnh cho vừa tầng trên: mọi thẻ cùng chiều cao, tổng chiều ngang không tràn */
+function fitCards(){
+  const row = $("cardRow"); if (!row) return;
+  const figs = [...row.children], GAP = 14, CAP = 30, OUT = 12;
+  const ratio = figs.map(f => f.dataset.land === "1" ? 1040 / 744 : 744 / 1039);
+  const sum = ratio.reduce((a, b) => a + b, 0);
+  const W = row.clientWidth - GAP * (figs.length - 1) - OUT * figs.length;
+  const h = Math.max(60, Math.min(row.clientHeight - CAP - OUT, W / sum));
+  figs.forEach((f, i) => { const im = f.querySelector("img"); im.style.height = h + "px"; im.style.width = Math.round(h * ratio[i]) + "px"; });
+}
+new ResizeObserver(fitCards).observe(document.getElementById("spread"));
+
+/* =========================================================
+   6. BUILD DECK — đọc danh sách, chọn art, đếm trang
+   ========================================================= */
+const SECTIONS = [["legend","Legend"],["champion","Champion"],["maindeck","MainDeck"],["battlefields","Battlefields"],["runepool","Rune Pool"],["sideboard","Sideboard"]];
+let DECK = null;    // {sections:{key:[{qty,name,list,card}]}, errors:n}
+
+function parseDeck(text){
+  const sec = Object.fromEntries(SECTIONS.map(([k]) => [k, []]));
+  let cur = "maindeck", errors = 0;
+  text.split(/\r?\n/).forEach(line => {
+    const l = line.trim(); if (!l) return;
+    const h = l.toLowerCase().replace(/[\s:]/g, "");
+    const hk = {legend:"legend",legends:"legend",champion:"champion",champions:"champion",maindeck:"maindeck",main:"maindeck",battlefield:"battlefields",battlefields:"battlefields",runepool:"runepool",runes:"runepool",rune:"runepool",sideboard:"sideboard",side:"sideboard"}[h];
+    if (hk) { cur = hk; return; }
+    const m = l.match(/^(\d+)\s*x?\s+(.+)$/i);
+    const qty = m ? +m[1] : 1, name = (m ? m[2] : l).trim();
+    const list = BY_NAME.get(norm(name)) || [];
+    if (!list.length) errors++;
+    sec[cur].push({ qty, name, list, card: list.length ? pickDefault(list) : null });
+  });
+  return { sections: sec, errors };
+}
+function printList(){
+  if (!DECK) return [];
+  const side = $("optSide").checked, out = [];
+  SECTIONS.forEach(([k]) => {
+    if (k === "sideboard" && !side) return;
+    DECK.sections[k].forEach(r => { if (r.card) for (let i = 0; i < r.qty; i++) out.push(r.card); });
+  });
+  return out;
+}
+function drawDeck(){
+  if (!DECK) return;
+  const total = printList().length, pages = Math.ceil(total / 9);
+  $("deckSum").textContent = `${DECK.name} · ${total} lá sẽ in · ${pages} trang A4` + (DECK.errors ? ` · ${DECK.errors} dòng không tìm thấy` : "");
+  $("deckList").innerHTML = SECTIONS.map(([k, label]) => {
+    const rows = DECK.sections[k]; if (!rows.length) return "";
+    const n = rows.reduce((a, r) => a + r.qty, 0);
+    return `<div class="dsec"><h3>${label} (${n})${k === "sideboard" && !$("optSide").checked ? " — không in" : ""}</h3>` +
+      rows.map((r, i) => r.card
+        ? `<div class="drow"><b>${r.qty}×</b><div class="th" style="background-image:url('${r.card.img}')"></div><span>${esc((r.card.champ ? r.card.champ + ", " : "") + r.card.name)}</span>
+             <select data-sec="${k}" data-i="${i}">${r.list.map(v => `<option value="${v.code}" ${v.code === r.card.code ? "selected" : ""}>${v.code.toUpperCase()} · ${esc(v.variant)}</option>`).join("")}</select></div>`
+        : `<div class="drow err"><b>${r.qty}×</b><div></div><span>${esc(r.name)}</span><span>Không tìm thấy tên này</span></div>`).join("") + "</div>";
+  }).join("");
+  document.querySelectorAll("#deckList select").forEach(s => s.onchange = e => {
+    const r = DECK.sections[e.target.dataset.sec][+e.target.dataset.i];
+    r.card = r.list.find(v => v.code === e.target.value);
+    DECKS.setArt(DECK.id, e.target.dataset.sec + ":" + e.target.dataset.i, r.card.code);   // nhớ art đã chọn cho deck này
+    drawDeck();
+  });
+  buildSheets($("preview"));
+  drawBar();
+}
+function drawBar(){
+  if (!DECK) { $("barName").textContent = "Chưa có deck"; $("barInfo").textContent = "Vào Build deck để chọn hoặc tạo deck"; $("barMini").style.backgroundImage = ""; return; }
+  const leg = DECK.sections.legend[0]?.card, total = printList().length;
+  $("barName").textContent = "Deck: " + DECK.name + (leg ? " · " + (leg.champ ? leg.champ + ", " : "") + leg.name : "");
+  $("barInfo").textContent = `${total} lá · ${Math.ceil(total / 9)} trang A4 · Sideboard: ${$("optSide").checked ? "in" : "không in"}`;
+  $("barMini").style.backgroundImage = leg ? `url('${leg.img}')` : "";
+  $("barSide").checked = $("optSide").checked;
+}
+
+/* --- 6b. kho deck đã lưu (localStorage "rb_decks": [{id,name,text,t,art}]) --- */
+const store = { get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+                set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} } };
+const DECKS = {
+  all(){
+    let l; try { l = JSON.parse(store.get("rb_decks", "[]")) || []; } catch (e) { l = []; }
+    l.forEach((d, i) => { if (!d.id) d.id = "d" + (d.t || Date.now()) + i; });
+    return l;
+  },
+  put(l){ store.set("rb_decks", JSON.stringify(l)); },
+  get(id){ return DECKS.all().find(d => d.id === id); },
+  save(id, name, text){                                    // id rỗng → deck mới; sửa danh sách thì bỏ art đã chọn
+    const l = DECKS.all(), nid = id || "d" + Date.now(), old = l.find(d => d.id === nid);
+    const art = old && old.text === text ? old.art : undefined;
+    DECKS.put([{ id: nid, name, text, t: Date.now(), art }, ...l.filter(d => d.id !== nid)]); return nid;
+  },
+  del(id){ DECKS.put(DECKS.all().filter(d => d.id !== id)); },
+  setArt(id, key, code){ const l = DECKS.all(), d = l.find(x => x.id === id); if (!d) return; d.art = d.art || {}; d.art[key] = code; DECKS.put(l); },
+};
+(() => {                                                   // deck "đang nhập" của bản cũ → đưa vào danh sách đã lưu
+  const old = store.get("rb_deck", "").trim();
+  if (old && !DECKS.all().some(d => d.text.trim() === old)) DECKS.save("", "Deck của tôi", old);
+  try { localStorage.removeItem("rb_deck"); } catch (e) {}
+})();
+const deckCount = text => Object.values(parseDeck(text).sections).flat().reduce((a, r) => a + r.qty, 0);
+
+/* --- 6c. màn: trái = danh sách | form sửa · phải = deck đang mở --- */
+const DK = { editId: null };                              // null: không sửa · "": deck mới · id: đang sửa
+function drawDeckList(){
+  const l = DECKS.all(), cur = DECK ? DECK.id : "";
+  $("dkList").innerHTML = l.length ? l.map(d => `
+    <div class="saved"><button class="open ${d.id === cur ? "cur" : ""}" data-open="${d.id}">${esc(d.name)}<small>${deckCount(d.text)} lá · lưu ${new Date(d.t).toLocaleDateString("vi-VN")}</small></button>
+    <button data-del="${d.id}">Xóa</button></div>`).join("")
+    : `<div class="note">Chưa có deck nào. Bấm "+ Deck mới", dán danh sách theo mẫu (Legend:, Champion:, MainDeck:, Battlefields:, Rune Pool:, Sideboard:), đặt tên rồi Lưu deck.</div>`;
+}
+function openDeck(id){                                     // id rỗng → đóng deck, cột phải trống
+  const d = id ? DECKS.get(id) : null;
+  DECK = d ? Object.assign(parseDeck(d.text), { id: d.id, name: d.name }) : null;
+  if (DECK && d.art) Object.entries(d.art).forEach(([k, code]) => {   // áp lại art đã chọn
+    const [sec, i] = k.split(":"), r = DECK.sections[sec] && DECK.sections[sec][+i];
+    const v = r && r.list.find(x => x.code === code); if (v) r.card = v;
+  });
+  $("dkEmpty").style.display = DECK ? "none" : ""; $("dkView").style.display = DECK ? "" : "none";
+  if (DECK) drawDeck(); else { $("deckList").innerHTML = ""; $("preview").innerHTML = ""; drawBar(); }
+  drawDeckList();
+}
+function editMode(id){                                     // id: null thoát · "" deck mới · id sửa deck
+  DK.editId = id;
+  $("dkListBox").style.display = id === null ? "contents" : "none";
+  $("dkEditBox").style.display = id === null ? "none" : "flex";
+  if (id === null) return;
+  const d = id ? DECKS.get(id) : null;
+  $("dkEditTitle").textContent = d ? "Sửa deck" : "Deck mới";
+  $("deckName").value = d ? d.name : ""; $("deckText").value = d ? d.text : ""; $("saveMsg").textContent = "";
+  $("deckName").focus();
+}
+$("btnNew").onclick = () => { openDeck(""); editMode(""); };
+$("btnEdit").onclick = () => editMode(DECK.id);
+$("btnClose").onclick = () => openDeck("");
+$("btnCancel").onclick = () => editMode(null);
+$("btnSave").onclick = () => {
+  const name = $("deckName").value.trim(), text = $("deckText").value.trim();
+  if (!text) { $("saveMsg").textContent = "Chưa có danh sách để lưu."; return; }
+  if (!name) { $("saveMsg").textContent = "Đặt tên deck trước khi lưu."; $("deckName").focus(); return; }
+  const same = DECKS.all().find(d => d.name.toLowerCase() === name.toLowerCase() && d.id !== DK.editId);
+  if (same && !confirm(`Đã có deck tên "${same.name}". Ghi đè?`)) return;
+  if (same) DECKS.del(same.id);
+  DECKS.save(DK.editId, name, text);
+  editMode(null); openDeck("");                            // lưu xong → về danh sách, ẩn thẻ
+};
+$("dkList").onclick = e => {
+  const o = e.target.closest("[data-open]"), x = e.target.closest("[data-del]");
+  if (o) openDeck(o.dataset.open);
+  if (x) { const d = DECKS.get(x.dataset.del); if (d && confirm(`Xóa deck "${d.name}"?`)) { DECKS.del(d.id); if (DECK && DECK.id === d.id) openDeck(""); else drawDeckList(); } }
+};
+
+/* =========================================================
+   7. TRANG IN A4 — vị trí tính bằng mm
+   ========================================================= */
+const MM = { W: 63, H: 88, GAP: 3, PW: 210, PH: 297 };
+MM.X0 = (MM.PW - (3 * MM.W + 2 * MM.GAP)) / 2;   // 7.5 mm
+MM.Y0 = (MM.PH - (3 * MM.H + 2 * MM.GAP)) / 2;   // 13.5 mm
+function buildSheets(target){
+  const list = printList(), hair = $("optHair").checked;
+  let html = "";
+  for (let p = 0; p < list.length; p += 9) {
+    let s = `<div class="sheet">`;
+    for (let i = 0; i < 3; i++) {              // vạch cắt ở lề (không đè lên thẻ)
+      [MM.X0 + i * (MM.W + MM.GAP), MM.X0 + i * (MM.W + MM.GAP) + MM.W].forEach(x => {
+        s += `<div class="cm" style="left:${x - .1}mm;top:0;width:.2mm;height:${MM.Y0 - 1.5}mm"></div>`;
+        s += `<div class="cm" style="left:${x - .1}mm;bottom:0;width:.2mm;height:${MM.Y0 - 1.5}mm"></div>`;
+      });
+      [MM.Y0 + i * (MM.H + MM.GAP), MM.Y0 + i * (MM.H + MM.GAP) + MM.H].forEach(y => {
+        s += `<div class="cm" style="top:${y - .1}mm;left:0;height:.2mm;width:${MM.X0 - 1.5}mm"></div>`;
+        s += `<div class="cm" style="top:${y - .1}mm;right:0;height:.2mm;width:${MM.X0 - 1.5}mm"></div>`;
+      });
+    }
+    list.slice(p, p + 9).forEach((c, k) => {
+      const x = MM.X0 + (k % 3) * (MM.W + MM.GAP), y = MM.Y0 + Math.floor(k / 3) * (MM.H + MM.GAP);
+      s += `<div class="pcard ${c.landscape ? "land" : ""} ${hair ? "hair" : ""}" style="left:${x}mm;top:${y}mm"><img src="${c.hi || c.img}" alt=""></div>`;
+    });
+    html += s + `</div>`;
+  }
+  target.innerHTML = html || `<div class="note">Chưa có lá nào để in.</div>`;
+}
+function doPrint(){
+  if (!printList().length) { alert("Chưa mở deck nào. Vào Build deck và chọn một deck đã lưu."); return; }
+  buildSheets($("printArea"));
+  const imgs = [...$("printArea").querySelectorAll("img")];
+  Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))).then(() => window.print());
+}
+
+/* =========================================================
+   8. KEYWORD + SỰ KIỆN + KHỞI ĐỘNG
+   ========================================================= */
+$("kwList").innerHTML = Object.keys(GLO).sort().map(k => `<div class="kwcard"><span class="kw">${k}</span><div style="margin-top:8px;line-height:1.6">${esc(GLO[k])}</div></div>`).join("");
+
+document.querySelectorAll(".nav").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".nav").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.v));
+});
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-set],[data-dom],.tile,.cards figure"); if (!t) return;
+  if (t.dataset.set) { ST.sets.has(t.dataset.set) ? ST.sets.delete(t.dataset.set) : ST.sets.add(t.dataset.set); ST.shown = 60; ST.sel = null; buildChips(); drawGrid(); }
+  else if (t.dataset.dom !== undefined && t.classList.contains("chip")) { ST.dom = t.dataset.dom; ST.shown = 60; buildChips(); drawGrid(); }
+  else if (t.dataset.code) showCard(t.dataset.code);
+});
+let qT; $("q").oninput = e => { clearTimeout(qT); qT = setTimeout(() => { ST.q = e.target.value; ST.shown = 60; ST.sel = null; drawGrid(); }, 200); };
+$("optSide").onchange = () => { if (DECK) drawDeck(); };
+$("barSide").onchange = e => { $("optSide").checked = e.target.checked; if (DECK) drawDeck(); };
+$("optHair").onchange = () => { if (DECK) drawDeck(); };
+$("btnPrint").onclick = doPrint; $("btnPrint2").onclick = doPrint;
+
+buildChips(); drawGrid();
+openDeck("");                                             // mở app: danh sách deck, chưa mở deck nào
+</script>
+</body>
+</html>
